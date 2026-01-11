@@ -79,19 +79,6 @@
   }
 }
 
-/* Sound Wave Ripple Animation */
-@keyframes soundWave {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(2.5);
-    opacity: 0;
-  }
-}
-
 /* Scroll Fade In Animation */
 @keyframes fadeInUp {
   from {
@@ -532,30 +519,6 @@ textarea::placeholder {
   color: var(--white);
   box-shadow: var(--shadow-glow);
   animation: pulseGlow 1.5s ease-in-out infinite;
-}
-
-/* Sound wave effect for information icons */
-.sound-wave-icon {
-  position: relative;
-  display: inline-block;
-}
-
-.sound-wave-icon::before,
-.sound-wave-icon::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  border: 2px solid var(--primary-cyan);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: soundWave 2s ease-out infinite;
-}
-
-.sound-wave-icon::after {
-  animation-delay: 1s;
 }
 
 /* Project Cards */

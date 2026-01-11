@@ -12,7 +12,7 @@ const Footer = () => {
                     <div style={{ flex: '1 1 300px' }}>
                         <h4 style={{ color: 'white' }}>MLA Public Portal</h4>
                         <p style={{ opacity: 0.8, fontSize: '0.9rem' }}>
-                            A Government of Kerala Initiative style portal for transparency and public engagement.
+                            A Perinthalmanna constituency of Kerala Initiative style portal for transparency and public engagement.
                             Bridge the gap between you and your elected representative.
                         </p>
                     </div>
@@ -33,7 +33,7 @@ const Footer = () => {
                         <h4 style={{ color: 'white' }}>Connect With Us</h4>
                         <p style={{ opacity: 0.8, fontSize: '0.9rem', marginBottom: '1rem' }}>
                             Legislative Assembly Complex,<br />
-                            Thiruvananthapuram, Kerala
+                            Perinthalmanna, Kerala
                         </p>
                         <div style={{ display: 'flex', gap: '15px' }}>
                             <a href="#" style={{ color: 'white' }}><FaFacebook size={20} /></a>
@@ -45,7 +45,7 @@ const Footer = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '30px', paddingTop: '20px', textAlign: 'center', fontSize: '0.85rem', opacity: 0.7 }}>
-                    &copy; 2025 MLA Public Insight Portal. All Rights Reserved. | Government of Kerala Style Theme
+                    &copy; 2025 MLA Public Insight Portal. All Rights Reserved. | Perinthalmanna MLA
                 </div>
             </div>
         </footer>

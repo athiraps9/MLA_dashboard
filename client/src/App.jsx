@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import PublicDashboard from './pages/PublicDashboard';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import MLADashboard from './pages/MLADashboard';
@@ -14,6 +13,9 @@ import ComplaintPortal from './pages/ComplaintPortal';
 import Chatbot from './components/Chatbot';
 import Footer from './components/Footer';
 import { LanguageProvider } from './context/LanguageContext';
+import PADashboard from './pages/PADashboard'; // New
+import UserDashboard from './pages/UserDashboard'; // New
+import AdminProfile from './pages/AdminProfile'; // New
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -39,8 +41,12 @@ const App = () => {
 
   const ProtectedRoute = ({ children, role }) => {
     if (!user) return <Navigate to="/login" />;
-    if (role && user.role !== role && role !== 'public') {
-      return <Navigate to="/" />;
+
+    // Role checks
+    if (role) {
+      if (role === 'admin' && user.role !== 'admin' && user.role !== 'mla') return <Navigate to="/" />;
+      if (role === 'pa' && user.role !== 'pa' && user.role !== 'admin') return <Navigate to="/" />;
+      if (role === 'public' && user.role !== 'public') return <Navigate to="/" />; // Or allow?
     }
     return children;
   };
@@ -54,18 +60,21 @@ const App = () => {
           <Navbar user={user} onLogout={handleLogout} />
           <div style={{ flex: '1' }}>
             <Routes>
-              <Route path="/" element={<LandingPage />} />
+              {/* Landing only visible if NOT logged in, otherwise redirect to dashboard */}
+              <Route path="/" element={!user ? <LandingPage /> : <Navigate to={user.role === 'public' ? '/user' : user.role === 'pa' ? '/pa' : '/admin'} />} />
+
               <Route path="/signup" element={<Signup onLogin={handleLogin} />} />
               <Route path="/login" element={<Login onLogin={handleLogin} />} />
 
-              <Route path="/dashboard" element={
+              {/* Public User Dashboard */}
+              <Route path="/user" element={
                 <ProtectedRoute role="public">
-                  <PublicDashboard />
+                  <UserDashboard />
                 </ProtectedRoute>
               } />
 
               <Route path="/complaints" element={
-                <ProtectedRoute role="public">
+                <ProtectedRoute>
                   <ComplaintPortal />
                 </ProtectedRoute>
               } />
@@ -74,22 +83,35 @@ const App = () => {
               <Route path="/mla-directory/:id" element={<MLADetail />} />
 
               <Route path="/profile" element={
-                <ProtectedRoute role="public">
+                <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
               } />
 
+              {/* Admin Dashboard */}
               <Route path="/admin" element={
                 <ProtectedRoute role="admin">
                   <AdminDashboard />
                 </ProtectedRoute>
               } />
 
-              <Route path="/mla-portal" element={
-                <ProtectedRoute role="mla">
-                  <MLADashboard user={user} />
+              {
+                <Route path="/admin/profile" element={
+                  <ProtectedRoute role="admin">
+                    <AdminProfile />
+                  </ProtectedRoute>
+                } />
+              }
+
+              {/* PA Dashboard */}
+              <Route path="/pa" element={
+                <ProtectedRoute role="pa">
+                  <PADashboard />
                 </ProtectedRoute>
               } />
+
+              {/* Old MLA Portal route - kept for legacy or redirect */}
+              <Route path="/mla-portal" element={<Navigate to="/admin" />} />
             </Routes>
           </div>
           <Footer />

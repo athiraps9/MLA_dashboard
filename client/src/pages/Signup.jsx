@@ -21,7 +21,7 @@ const Signup = ({ onLogin }) => {
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             if (onLogin) onLogin(res.data.user);
-            navigate('/');
+            navigate('/user'); // Redirect to user dashboard, not landing
         } catch (err) {
             setError(err.response?.data?.message || 'Signup failed');
         }

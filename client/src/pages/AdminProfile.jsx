@@ -5,7 +5,7 @@ import { FaUserCircle, FaHistory, FaPlus, FaExternalLinkAlt, FaTimes, FaSave } f
 import AvatarUpload from '../components/AvatarUpload';
 import { useLanguage } from '../context/LanguageContext';
 
-const Profile = () => {
+const AdminProfile = () => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const [activeTab, setActiveTab] = useState('details');
     const [complaints, setComplaints] = useState([]);
@@ -112,7 +112,7 @@ const Profile = () => {
                         >
                             My Details
                         </button>
-                        <button
+                        {/* <button
                             onClick={() => setActiveTab('complaints')}
                             style={{
                                 width: '100%', padding: '15px 20px', textAlign: 'left',
@@ -123,15 +123,15 @@ const Profile = () => {
                             }}
                         >
                             My Complaints
-                        </button>
+                        </button> */}
                     </div>
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: '3 0 400px' }}>
+                <div style={{ flex: '3 0 600px' }}>
                     {activeTab === 'details' && (
                         <div className="card">
-                            <h3 className="card-header" style={{ marginBottom: '20px' }}>Profile Information</h3>
+                            <h3 className="card-header" style={{ marginBottom: '20px', color: 'white' }}>Profile Information</h3>
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <AvatarUpload
@@ -231,4 +231,4 @@ const Profile = () => {
     );
 };
 
-export default Profile;
+export default AdminProfile;

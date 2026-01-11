@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+export const SERVER_URL = 'http://localhost:5000';
+export const API_URL = `${SERVER_URL}/api`;
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -13,10 +16,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     console.log('im in api.js');
 
-    console.log('Token:', token);
-    console.log('Config:', config);
+   // console.log('Token:', token);
+  //  console.log('Config:', config);
 
-    console.log("im ending api.js");
+  //  console.log("im ending api.js");
     
   
 

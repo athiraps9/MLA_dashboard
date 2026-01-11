@@ -1,10 +1,13 @@
 
-
 import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import AdminLandingCMS from '../components/AdminLandingCMS';
+import PAManagement from '../components/PAManagement'; // Import PA Management
+import AvatarUpload from '../components/AvatarUpload';
+import { SERVER_URL } from '../utils/api';
+import { FaUserCircle, FaSave } from 'react-icons/fa';
 import '../styles/variables.css';
 
 const AdminDashboard = () => {
@@ -14,12 +17,24 @@ const AdminDashboard = () => {
     const [editMode, setEditMode] = useState(null); // ID of project being edited
     const [editData, setEditData] = useState({});
 
+    // Profile State
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editName, setEditName] = useState('');
+
+    useEffect(() => {
+        fetchPending();
+        if (user) {
+            setPreviewUrl(user.avatar ? `${SERVER_URL}${user.avatar}` : null);
+            setEditName(user.fullName || '');
+        }
+    }, [user]);
+
     const fetchPending = async () => {
         try {
             const res = await api.get('/admin/pending');
-            // Fetch complaints separately as it's a new route
-            const pendingComplaints = await api.get('/complaints/all');
-
+            const pendingComplaints = await api.get('/complaints/all'); // Keep this, assuming route exists/is updated
             setPending({ ...res.data, complaints: pendingComplaints.data });
         } catch (err) {
             console.error(err);
@@ -35,7 +50,7 @@ const AdminDashboard = () => {
     const handleProjectAction = async (id, status) => {
         try {
             const remarks = prompt("Enter remarks (optional):", status === 'approved' ? 'Verified by Admin' : 'Rejected');
-            if (remarks === null) return; // User cancelled
+            if (remarks === null) return;
             await api.put(`/admin/project/${id}`, { status, remarks });
             fetchPending();
         } catch (err) {
@@ -80,11 +95,37 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleFileSelect = async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('avatar', file);
+            setPreviewUrl(URL.createObjectURL(file)); // Optimistic
+            const res = await api.put('/auth/profile', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+            const updatedUser = { ...user, ...res.data };
+            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
+            setUser(updatedUser);
+        } catch (err) { alert('Upload failed'); console.error(err); }
+    };
+
+    const handleSaveName = async () => {
+        try {
+            const formData = new FormData();
+            formData.append('fullName', editName);
+            const res = await api.put('/auth/profile', formData);
+
+            const updatedUser = { ...user, ...res.data };
+            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
+            setUser(updatedUser);
+            setIsEditingName(false);
+        } catch (err) { alert('Update name failed'); }
+    };
+
     if (loading) return <div className="text-center mt-lg">Loading Admin Panel...</div>;
 
     const styles = {
-        tabContainer: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #ccc', paddingBottom: '10px' },
-        tab: { padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.1rem' },
+        tabContainer: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #ccc', paddingBottom: '10px', overflowX: 'auto' },
+        tab: { padding: '10px 20px', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.1rem', whiteSpace: 'nowrap' },
         activeTab: { borderBottom: '3px solid var(--primary-color)', fontWeight: 'bold', color: 'var(--primary-color)' }
     };
 
@@ -111,7 +152,53 @@ const AdminDashboard = () => {
                 >
                     Complaints
                 </button>
+                <button
+                    style={{ ...styles.tab, ...(activeTab === 'pa_management' ? styles.activeTab : {}) }}
+                    onClick={() => setActiveTab('pa_management')}
+                >
+                    PA Management
+                </button>
+                <button
+                    style={{ ...styles.tab, ...(activeTab === 'profile' ? styles.activeTab : {}) }}
+                    onClick={() => setActiveTab('profile')}
+                >
+                    Profile
+                </button>
             </div>
+
+            {activeTab === 'profile' && (
+                <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <Card title="My Profile">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
+                            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>Click photo to update</p>
+
+                            <div style={{ width: '100%', maxWidth: '400px' }}>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name</label>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    {isEditingName ? (
+                                        <>
+                                            <input
+                                                value={editName} onChange={e => setEditName(e.target.value)}
+                                                style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                                            />
+                                            <Button onClick={handleSaveName}><FaSave /></Button>
+                                            <Button variant="danger" onClick={() => setIsEditingName(false)}>X</Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div style={{ flex: 1, padding: '10px', fontSize: '1.1rem', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
+                                            <span style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsEditingName(true)}>✏️ Edit</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {activeTab === 'pa_management' && <PAManagement />}
 
             {activeTab === 'cms' && <AdminLandingCMS />}
 
@@ -133,7 +220,8 @@ const AdminDashboard = () => {
                                 </div>
                                 <p style={{ fontSize: '0.9rem', color: '#666' }}>By: {c.user?.fullName} ({c.user?.email})</p>
                                 <p>{c.description}</p>
-                                {c.adminResponse && <p style={{ background: '#f8f9fa', padding: '10px' }}><strong>Response:</strong> {c.adminResponse}</p>}
+                                {c.adminResponse && <p style={{ background: '#f8f9fa', padding: '10px' }}><strong>Admin Response:</strong> {c.adminResponse}</p>}
+                                {c.paResponse && <p style={{ background: '#f8f9fa', padding: '10px' }}><strong>PA Response:</strong> {c.paResponse}</p>}
 
                                 {c.status !== 'Resolved' && (
                                     <div style={{ marginTop: '10px' }}>
@@ -143,7 +231,7 @@ const AdminDashboard = () => {
                                                 const resp = prompt("Enter resolution response:");
                                                 if (resp) {
                                                     await api.put(`/complaints/${c._id}`, { status: 'Resolved', adminResponse: resp });
-                                                    fetchPending(); // Re-fetch
+                                                    fetchPending();
                                                 }
                                             }}
                                         >
@@ -198,20 +286,20 @@ const AdminDashboard = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
                                 <thead>
                                     <tr style={{ backgroundColor: 'var(--primary-color)', color: 'white', textAlign: 'left' }}>
+                                        <th style={{ padding: '10px' }}>Season</th>
                                         <th style={{ padding: '10px' }}>Date</th>
                                         <th style={{ padding: '10px' }}>MLA</th>
-                                        <th style={{ padding: '10px' }}>Type</th>
-                                        <th style={{ padding: '10px' }}>Description</th>
+                                        <th style={{ padding: '10px' }}>Status</th>
                                         <th style={{ padding: '10px' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {pending.attendance.map(a => (
                                         <tr key={a._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <td style={{ padding: '10px' }}>{a.season || 'N/A'}</td>
                                             <td style={{ padding: '10px' }}>{new Date(a.date).toLocaleDateString()}</td>
-                                            <td style={{ padding: '10px' }}>{a.mla?.fullName}</td>
-                                            <td style={{ padding: '10px' }}>{a.type}</td>
-                                            <td style={{ padding: '10px' }}>{a.description}</td>
+                                            <td style={{ padding: '10px' }}>{a.mlaName || 'MLA'}</td>
+                                            <td style={{ padding: '10px' }}>{a.present ? 'Present' : 'Absent'}</td>
                                             <td style={{ padding: '10px' }}>
                                                 <Button variant="success" onClick={() => handleAttendanceAction(a._id, true)} style={{ marginRight: '5px', fontSize: '0.8rem', padding: '4px 8px' }}>Verify</Button>
                                                 <Button variant="danger" onClick={() => handleAttendanceAction(a._id, false)} style={{ fontSize: '0.8rem', padding: '4px 8px' }}>Reject</Button>
