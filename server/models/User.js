@@ -3,14 +3,24 @@ const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  email: { type: String, unique: true, sparse: true }, // Verified: Email is key for public users
+  email: { type: String, unique: true, sparse: true },
   password: { type: String, required: true },
-  userType: { type: String, enum: ['public', 'authority'], default: 'public' }, // New field
+  userType: { type: String, enum: ['public', 'authority'], default: 'public' },
   role: { type: String, enum: ['admin', 'mla', 'pa', 'public'], required: true },
-  district: { type: String }, // Only for MLA
   fullName: { type: String, required: true },
-  avatar: { type: String }, // URL to profile photo
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // Track who created PA accounts
+  phoneNumber: { type: String },
+  dateOfBirth: { type: Date },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+  constituency: { type: String },
+  address: { type: String },
+  education: [{
+    qualification: { type: String },
+    institution: { type: String },
+    passingYear: { type: String }
+  }],
+  district: { type: String }, // For MLA
+  avatar: { type: String },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 UserSchema.pre('save', async function(next) {

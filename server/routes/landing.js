@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
     // Lacking Total Sessions info, so we will mock 85% or calculate based on assumptions if needed.
     // Let's just return total Activities count for now as a proxy or 85% static for MVP if no session data.
     // I'll return a calculated "Active Rate" based on recent activities.
-    const totalActivities = await Attendance.countDocuments();
+    //const totalActivities = await Attendance.countDocuments();
     const averageAttendance = 85; // Placeholder/Mock as we don't have "Total Sessions" model.
 
     res.json({

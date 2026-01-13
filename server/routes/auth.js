@@ -48,18 +48,34 @@ router.post('/login', async (req, res) => {
 
 // Public Signup
 router.post('/signup', async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { 
+    username, 
+    email, 
+    password, 
+    phoneNumber, 
+    dateOfBirth, 
+    gender, 
+    constituency, 
+    address, 
+    education 
+  } = req.body;
   try {
-    let user = await User.findOne({ username: email });
-    if (user) return res.status(400).json({ message: 'User already exists' });
+    let user = await User.findOne({ $or: [{ username }, { email }] });
+    if (user) return res.status(400).json({ message: 'User with this username or email already exists' });
 
     user = new User({
-      username: email, // Using email as username for public users
+      username,
       email,
       password,
       role: 'public',
       userType: 'public',
-      fullName
+      fullName: username, // Default fullName to username as it's not in the UI
+      phoneNumber,
+      dateOfBirth,
+      gender,
+      constituency,
+      address,
+      education
     });
 
     await user.save();
