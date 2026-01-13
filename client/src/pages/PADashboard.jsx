@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import AvatarUpload from '../components/AvatarUpload';
 import { SERVER_URL } from '../utils/api';
-import { FaUserCircle, FaSave } from 'react-icons/fa';
+import { FaUserCircle, FaSave, FaUser, FaLock, FaTrash, FaPlus } from 'react-icons/fa';
 import '../styles/variables.css';
 
 const PADashboard = () => {
@@ -25,15 +25,40 @@ const PADashboard = () => {
     // Profile State
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const [previewUrl, setPreviewUrl] = useState('');
-    // Inline Name Edit
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [editName, setEditName] = useState('');
+    const [editData, setEditData] = useState({
+        username: '',
+        email: '',
+        password: '',
+        fullName: '',
+        phoneNumber: '',
+        dateOfBirth: '',
+        gender: '',
+        constituency: '',
+        address: '',
+        education: []
+    });
+    const [searchConstituency, setSearchConstituency] = useState('');
+    const [showConstituencySuggestions, setShowConstituencySuggestions] = useState(false);
+    const [error, setError] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         fetchDashboardData();
         if (user) {
             setPreviewUrl(user.avatar ? `${SERVER_URL}${user.avatar}` : null);
-            setEditName(user.fullName || '');
+            setEditData({
+                username: user.username || '',
+                email: user.email || '',
+                password: '',
+                fullName: user.fullName || '',
+                phoneNumber: user.phoneNumber || '',
+                dateOfBirth: user.dateOfBirth || '',
+                gender: user.gender || 'Male',
+                constituency: user.constituency || '',
+                address: user.address || '',
+                education: user.education || [{ qualification: '', institution: '', passingYear: '' }]
+            });
+            setSearchConstituency(user.constituency || '');
         }
     }, [user]);
 
@@ -131,19 +156,57 @@ const PADashboard = () => {
         } catch (err) { alert('Upload failed'); console.error(err); }
     };
 
-    const handleSaveName = async () => {
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setEditData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleEducationChange = (index, e) => {
+        const { name, value } = e.target;
+        const newEdu = [...editData.education];
+        newEdu[index][name] = value;
+        setEditData(prev => ({ ...prev, education: newEdu }));
+    };
+
+    const addEducation = () => {
+        setEditData(prev => ({
+            ...prev,
+            education: [...prev.education, { qualification: '', institution: '', passingYear: '' }]
+        }));
+    };
+
+    const removeEducation = (index) => {
+        const newEdu = editData.education.filter((_, i) => i !== index);
+        setEditData(prev => ({ ...prev, education: newEdu }));
+    };
+
+    const handleProfileSave = async () => {
+        setError('');
+        setLoading(true);
         try {
             const formData = new FormData();
-            formData.append('fullName', editName);
+            Object.keys(editData).forEach(key => {
+                if (key === 'education') {
+                    formData.append(key, JSON.stringify(editData[key]));
+                } else if (editData[key] !== undefined && editData[key] !== null) {
+                    formData.append(key, editData[key]);
+                }
+            });
+
             const res = await api.put('/auth/profile', formData);
 
             const updatedUser = { ...user, ...res.data };
-            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
+            localStorage.setItem('user', JSON.stringify(updatedUser));
             setUser(updatedUser);
-            setIsEditingName(false);
-        } catch (err) { alert('Update name failed'); }
+            setIsEditing(false);
+            alert('Profile updated successfully!');
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Failed to update profile');
+        } finally {
+            setLoading(false);
+        }
     };
-
 
     if (loading) return <div>Loading...</div>;
 
@@ -152,7 +215,10 @@ const PADashboard = () => {
         nav: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #ccc' },
         navItem: (active) => ({ padding: '10px 20px', cursor: 'pointer', borderBottom: active ? '2px solid blue' : 'none', color: active ? 'blue' : 'black' }),
         grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' },
-        statCard: { padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }
+        statCard: { padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+        inputGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
+        label: { fontWeight: 'bold', fontSize: '0.9rem', color: '#1a365d' },
+        input: { padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0', fontSize: '1rem', width: '100%' }
     };
 
     return (
@@ -240,19 +306,20 @@ const PADashboard = () => {
                             <div style={{ width: '100%', maxWidth: '400px' }}>
                                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name</label>
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    {isEditingName ? (
+                                    {isEditing ? (
                                         <>
                                             <input
-                                                value={editName} onChange={e => setEditName(e.target.value)}
+                                                value={editData.fullName}
+                                                onChange={e => setEditData({ ...editData, fullName: e.target.value })}
                                                 style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
                                             />
-                                            <Button onClick={handleSaveName}><FaSave /></Button>
-                                            <Button variant="danger" onClick={() => setIsEditingName(false)}>X</Button>
+                                            <Button onClick={handleProfileSave}><FaSave /></Button>
+                                            <Button variant="danger" onClick={() => setIsEditing(false)}>X</Button>
                                         </>
                                     ) : (
                                         <>
                                             <div style={{ flex: 1, padding: '10px', fontSize: '1.1rem', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
-                                            <span style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsEditingName(true)}>✏️ Edit</span>
+                                            <span style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsEditing(true)}>✏️ Edit</span>
                                         </>
                                     )}
                                 </div>

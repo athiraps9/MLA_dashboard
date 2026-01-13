@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api, { SERVER_URL } from '../utils/api';
-import { FaUserCircle, FaHistory, FaPlus, FaExternalLinkAlt, FaTimes, FaSave } from 'react-icons/fa';
+import { FaUserCircle, FaSave } from 'react-icons/fa';
 import AvatarUpload from '../components/AvatarUpload';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -9,11 +9,11 @@ const Profile = () => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const [activeTab, setActiveTab] = useState('details');
     const [complaints, setComplaints] = useState([]);
+    const [isEditing, setIsEditing] = useState(false);
 
-    // Edit State
-    const [isEditingName, setIsEditingName] = useState(false);
     const [editName, setEditName] = useState('');
     const [previewUrl, setPreviewUrl] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const { t } = useLanguage();
 
@@ -33,53 +33,53 @@ const Profile = () => {
     };
 
     const handleFileSelect = async (file) => {
-        // Immediate upload for Avatar (WhatsApp style)
         try {
             const formData = new FormData();
             formData.append('avatar', file);
-
-            // Optimistic update
             setPreviewUrl(URL.createObjectURL(file));
 
             const res = await api.put('/auth/profile', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            // Update user
             const updatedUser = { ...user, ...res.data };
             localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
             setUser(updatedUser);
         } catch (err) {
             console.error(err);
             alert('Failed to upload image');
-            // Revert preview if needed (optional)
         }
     };
 
-    const handleSaveName = async () => {
-        try {
-            const formData = new FormData();
-            formData.append('fullName', editName);
-
-            const res = await api.put('/auth/profile', formData);
-
-            const updatedUser = { ...user, ...res.data };
-            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
-            setUser(updatedUser);
-            setIsEditingName(false);
-        } catch (err) {
-            console.error(err);
-            alert('Failed to update name');
-        }
-    };
-
-    // Initialize preview/edit name
     useEffect(() => {
         if (user) {
             setPreviewUrl(user.avatar ? `${SERVER_URL}${user.avatar}` : null);
             setEditName(user.fullName || '');
         }
     }, [user]);
+
+    const handleSaveName = async () => {
+        try {
+            setLoading(true);
+            const formData = new FormData();
+            formData.append('fullName', editName);
+            const res = await api.put('/auth/profile', formData);
+
+            const updatedUser = { ...user, ...res.data }; // spread operator to merge the user object with the response data
+            console.log(updatedUser);
+
+            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
+            setUser(updatedUser);
+            setIsEditing(false);
+            alert('Name updated!');
+        } catch (err) {
+            alert('Update failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
 
     return (
         <div className="container section-padding">
@@ -130,53 +130,32 @@ const Profile = () => {
                 {/* Content */}
                 <div style={{ flex: '3 0 400px' }}>
                     {activeTab === 'details' && (
-                        <div className="card">
-                            <h3 className="card-header" style={{ marginBottom: '20px' }}>Profile Information</h3>
-
+                        <div className="card" style={{ padding: '2rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <AvatarUpload
-                                    src={previewUrl}
-                                    onFileSelect={handleFileSelect}
-                                    editable={true}
-                                />
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                                    Click the camera icon to update your photo
-                                </p>
+                                <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '10px' }}>Update photo</p>
 
-                                <div style={{ width: '100%', maxWidth: '400px' }}>
-                                    <label style={{ display: 'block', marginBottom: '5px', color: 'var(--primary-blue)', fontWeight: 'bold' }}>Your Name</label>
-                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                        {isEditingName ? (
+                                <div style={{ width: '100%', maxWidth: '400px', marginTop: '2rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Full Name</label>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        {isEditing ? (
                                             <>
                                                 <input
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
                                                     className="form-control"
-                                                    style={{ flex: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-                                                    autoFocus
+                                                    value={editName}
+                                                    onChange={e => setEditName(e.target.value)}
+                                                    style={{ flex: 1 }}
                                                 />
-                                                <button onClick={handleSaveName} className="btn btn-success" style={{ padding: '10px' }}><FaSave /></button>
-                                                <button onClick={() => setIsEditingName(false)} className="btn btn-outline-danger" style={{ padding: '10px' }}><FaTimes /></button>
+                                                <button className="btn btn-primary" onClick={handleSaveName} disabled={loading}><FaSave /></button>
+                                                <button className="btn btn-outline-secondary" onClick={() => setIsEditing(false)}>Cancel</button>
                                             </>
                                         ) : (
                                             <>
-                                                <div style={{ flex: 1, padding: '10px', fontSize: '1.1rem', borderBottom: '1px solid #eee' }}>
-                                                    {user.fullName}
-                                                </div>
-                                                <button onClick={() => setIsEditingName(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#00cc66' }}>
-                                                    <span role="img" aria-label="edit">✏️</span> Edit
-                                                </button>
+                                                <div style={{ flex: 1, padding: '10px', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
+                                                <button className="btn btn-sm btn-outline-primary" onClick={() => setIsEditing(true)}>Edit</button>
                                             </>
                                         )}
                                     </div>
-                                    <p style={{ marginTop: '20px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                        This is not your username or pin. This name will be visible to your administrators.
-                                    </p>
-                                </div>
-                                <div style={{ width: '100%', maxWidth: '400px', marginTop: '2rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '5px', color: 'var(--primary-blue)', fontWeight: 'bold' }}>Email</label>
-                                    <input type="text" value={user.email || user.username} readOnly className="form-control" style={{ background: '#f8f9fa', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }} />
                                 </div>
                             </div>
                         </div>
