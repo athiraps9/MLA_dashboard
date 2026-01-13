@@ -7,7 +7,7 @@ import AdminLandingCMS from '../components/AdminLandingCMS';
 import PAManagement from '../components/PAManagement'; // Import PA Management
 import AvatarUpload from '../components/AvatarUpload';
 import { SERVER_URL } from '../utils/api';
-import { FaUserCircle, FaSave } from 'react-icons/fa';
+import { FaUserCircle, FaSave, FaUser } from 'react-icons/fa';
 import '../styles/variables.css';
 
 const AdminDashboard = () => {
@@ -17,10 +17,9 @@ const AdminDashboard = () => {
     const [editMode, setEditMode] = useState(null); // ID of project being edited
     const [editData, setEditData] = useState({});
 
-    // Profile State
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const [previewUrl, setPreviewUrl] = useState('');
-    const [isEditingName, setIsEditingName] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
 
     useEffect(() => {
@@ -110,6 +109,7 @@ const AdminDashboard = () => {
 
     const handleSaveName = async () => {
         try {
+            setLoading(true);
             const formData = new FormData();
             formData.append('fullName', editName);
             const res = await api.put('/auth/profile', formData);
@@ -117,9 +117,15 @@ const AdminDashboard = () => {
             const updatedUser = { ...user, ...res.data };
             localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
             setUser(updatedUser);
-            setIsEditingName(false);
-        } catch (err) { alert('Update name failed'); }
+            setIsEditing(false);
+            alert('Name updated!');
+        } catch (err) {
+            alert('Update failed');
+        } finally {
+            setLoading(false);
+        }
     };
+
 
     if (loading) return <div className="text-center mt-lg">Loading Admin Panel...</div>;
 
@@ -167,34 +173,34 @@ const AdminDashboard = () => {
             </div>
 
             {activeTab === 'profile' && (
-                <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    <Card title="My Profile">
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
-                            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>Click photo to update</p>
+                <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
+                        <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '10px' }}>Update photo</p>
 
-                            <div style={{ width: '100%', maxWidth: '400px' }}>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name</label>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    {isEditingName ? (
-                                        <>
-                                            <input
-                                                value={editName} onChange={e => setEditName(e.target.value)}
-                                                style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                                            />
-                                            <Button onClick={handleSaveName}><FaSave /></Button>
-                                            <Button variant="danger" onClick={() => setIsEditingName(false)}>X</Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div style={{ flex: 1, padding: '10px', fontSize: '1.1rem', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
-                                            <span style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsEditingName(true)}>✏️ Edit</span>
-                                        </>
-                                    )}
-                                </div>
+                        <div style={{ width: '100%', maxWidth: '400px', marginTop: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Full Name</label>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                {isEditing ? (
+                                    <>
+                                        <input
+                                            className="form-control"
+                                            value={editName}
+                                            onChange={e => setEditName(e.target.value)}
+                                            style={{ flex: 1 }}
+                                        />
+                                        <Button onClick={handleSaveName} disabled={loading}><FaSave /></Button>
+                                        <button className="btn btn-outline-secondary" onClick={() => setIsEditing(false)}>X</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div style={{ flex: 1, padding: '10px', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
+                                        <button className="btn btn-sm btn-outline-primary" onClick={() => setIsEditing(true)}>Edit</button>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             )}
 

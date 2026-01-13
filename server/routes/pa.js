@@ -37,6 +37,7 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // ATTENDANCE ROUTES
+//Test
 
 // POST /pa/attendance - Add new season or add days to season
 router.post('/attendance', auth, ensurePA, async (req, res) => {

@@ -39,7 +39,9 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.json({ token, user: { id: user._id, role: user.role, fullName: user.fullName, userType: user.userType, district: user.district } });
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json({ token, user: userObj });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -48,18 +50,34 @@ router.post('/login', async (req, res) => {
 
 // Public Signup
 router.post('/signup', async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { 
+    username, 
+    email, 
+    password, 
+    phoneNumber, 
+    dateOfBirth, 
+    gender, 
+    constituency, 
+    address, 
+    education 
+  } = req.body;
   try {
-    let user = await User.findOne({ username: email });
-    if (user) return res.status(400).json({ message: 'User already exists' });
+    let user = await User.findOne({ $or: [{ username }, { email }] });
+    if (user) return res.status(400).json({ message: 'User with this username or email already exists' });
 
     user = new User({
-      username: email, // Using email as username for public users
+      username,
       email,
       password,
       role: 'public',
       userType: 'public',
-      fullName
+      fullName: username, // Default fullName to username as it's not in the UI
+      phoneNumber,
+      dateOfBirth,
+      gender,
+      constituency,
+      address,
+      education
     });
 
     await user.save();
@@ -70,7 +88,9 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.status(201).json({ token, user: { id: user._id, role: user.role, fullName: user.fullName, userType: user.userType } });
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.status(201).json({ token, user: userObj });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -161,27 +181,64 @@ router.post('/seed', async (req, res) => {
 });
 
 // Update Profile (All Users)
-router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
+router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
+  console.log("req.file", req.file);
     try {
-        const updates = {};
-        if (req.body.fullName) updates.fullName = req.body.fullName;
-        if (req.file) {
-             // Store relative path. Frontend will prepend API_URL if needed, or if hosted on same domain it works 
-             // Actually, usually it's better to return the full URL or let frontend handle.
-             // Let's store '/uploads/filename'.
-             updates.avatar = `/uploads/${req.file.filename}`;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const {
+            fullName, username, email, password,
+            phoneNumber, dateOfBirth, gender,
+            constituency, address, education
+        } = req.body;
+
+        // Check for unique constraints if username/email are changing
+        if (username && username !== user.username) {
+            const existing = await User.findOne({ username });
+            if (existing) return res.status(400).json({ message: 'Username already taken' });
+            user.username = username;
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $set: updates },
-            { new: true }
-        ).select('-password');
+        if (email && email !== user.email) {
+            const existing = await User.findOne({ email });
+            if (existing) return res.status(400).json({ message: 'Email already in use' });
+            user.email = email;
+        }
 
-        res.json(user);
+        if (fullName) user.fullName = fullName;
+        if (phoneNumber) user.phoneNumber = phoneNumber;
+        if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+        if (gender) user.gender = gender;
+        if (constituency) user.constituency = constituency;
+        if (address) user.address = address;
+        
+        if (education) {
+            try {
+                user.education = typeof education === 'string' ? JSON.parse(education) : education;
+            } catch (e) {
+                console.error("Education parse error", e);
+            }
+        }
+
+        if (password && password.trim() !== '') {
+            user.password = password; // Pre-save hook will hash this
+        }
+
+        if (req.file) {
+            user.avatar = `/uploads/${req.file.filename}`;
+            console.log("user.avatar", user.avatar);
+        }
+
+        await user.save();
+
+        // Return user without password
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json(userObj); // updated data sends back to client
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error during profile update' });
     }
 });
 
