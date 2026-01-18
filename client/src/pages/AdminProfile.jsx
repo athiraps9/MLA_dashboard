@@ -1,215 +1,401 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api, { SERVER_URL } from '../utils/api';
-import { FaUserCircle, FaHistory, FaPlus, FaSave } from 'react-icons/fa';
-import AvatarUpload from '../components/AvatarUpload';
-import { useLanguage } from '../context/LanguageContext';
 
 const AdminProfile = () => {
+    const navigate = useNavigate();
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
-    const [activeTab, setActiveTab] = useState('details');
-    const [complaints, setComplaints] = useState([]);
-    const [isEditing, setIsEditing] = useState(false);
-
-    const [editName, setEditName] = useState('');
-    const [previewUrl, setPreviewUrl] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const { t } = useLanguage();
+    // Form States for different sections
+    const [editMode, setEditMode] = useState({
+        basic: false,
+        constituency: false,
+        contact: false,
+        social: false
+    });
 
-    useEffect(() => {
-        if (activeTab === 'complaints') {
-            fetchComplaints();
-        }
-    }, [activeTab]);
+    const [profileData, setProfileData] = useState({
+        fullName: user.fullName || 'Najeeb Kanthapuram',
+        constituency: user.constituency || 'Perinthalmanna',
+        assemblyNumber: user.assemblyNumber || '38',
+        officeAddress: user.officeAddress || 'MLA Office, Perinthalmanna, Malappuram District, Kerala - 679322',
+        phoneNumber: user.phoneNumber || '+91 94470 12345',
+        facebook: user.facebook || '/najeeb.mla',
+        twitter: user.twitter || '@najeeb_mla',
+        instagram: user.instagram || '@kanthapuram_official'
+    });
 
-    const fetchComplaints = async () => {
-        try {
-            const res = await api.get('/complaints/my');
-            setComplaints(res.data);
-        } catch (err) {
-            console.error(err);
-        }
+    const [previewUrl, setPreviewUrl] = useState(user.avatar ? `${SERVER_URL}${user.avatar}` : null);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setProfileData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFileSelect = async (file) => {
-        // Immediate upload for Avatar (WhatsApp style)
-        try {
-            const formData = new FormData();
-            formData.append('avatar', file);
-
-            // Optimistic update
-            setPreviewUrl(URL.createObjectURL(file));
-
-            const res = await api.put('/auth/profile', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            // Update user
-            const updatedUser = { ...user, ...res.data };
-            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
-            setUser(updatedUser);
-        } catch (err) {
-            console.error(err);
-            alert('Failed to upload image');
-            // Revert preview if needed (optional)
-        }
+    const toggleEdit = (section) => {
+        setEditMode(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-
-    // Initialize preview/edit data
-    useEffect(() => {
-        if (user) {
-            setPreviewUrl(user.avatar ? `${SERVER_URL}${user.avatar}` : null);
-            setEditName(user.fullName || '');
-        }
-    }, [user]);
-
-    const handleSaveName = async () => {
+    const handleSave = async (section) => {
         try {
             setLoading(true);
             const formData = new FormData();
-            formData.append('fullName', editName);
-            const res = await api.put('/auth/profile', formData);
 
+            // Mapping local state to your backend fields
+            if (section === 'basic') {
+                formData.append('fullName', profileData.fullName);
+            } else if (section === 'constituency') {
+                formData.append('constituency', profileData.constituency);
+                formData.append('assemblyNumber', profileData.assemblyNumber);
+            } else if (section === 'contact') {
+                formData.append('officeAddress', profileData.officeAddress);
+                formData.append('phoneNumber', profileData.phoneNumber);
+            } else if (section === 'social') {
+                formData.append('facebook', profileData.facebook);
+                formData.append('twitter', profileData.twitter);
+                formData.append('instagram', profileData.instagram);
+            }
+
+            const res = await api.put('/auth/profile', formData);
             const updatedUser = { ...user, ...res.data };
-            localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user')), ...updatedUser }));
+
+            localStorage.setItem('user', JSON.stringify(updatedUser));
             setUser(updatedUser);
-            setIsEditing(false);
-            alert('Name updated!');
+            toggleEdit(section);
         } catch (err) {
+            console.error(err);
             alert('Update failed');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleFileSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            setLoading(true);
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            const objectUrl = URL.createObjectURL(file);
+            setPreviewUrl(objectUrl);
+
+            const res = await api.put('/auth/profile', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            const updatedUser = { ...user, ...res.data };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+            setPreviewUrl(`${SERVER_URL}${res.data.avatar}`);
+        } catch (err) {
+            console.error(err);
+            alert('Failed to upload image');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+    };
 
     return (
-        <div className="container section-padding">
-            <h1 className="text-center" style={{ marginBottom: '2rem' }}>{t('My Profile', 'എന്റെ പ്രൊഫൈൽ')}</h1>
-
-            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                {/* Sidebar */}
-                <div className="card" style={{ flex: '1 0 250px', height: 'fit-content', padding: '0' }}>
-                    <div className="text-center" style={{ padding: '2rem' }}>
-                        <div style={{ width: '80px', height: '80px', margin: '0 auto 1rem', borderRadius: '50%', overflow: 'hidden' }}>
-                            {user.avatar ? (
-                                <img src={`${SERVER_URL}${user.avatar}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                <FaUserCircle size={80} color="var(--text-muted)" />
-                            )}
-                        </div>
-                        <h3 style={{ marginTop: '1rem', color: 'var(--primary-blue)' }}>{user.fullName}</h3>
-                        <p style={{ color: 'var(--text-muted)' }}>{user.role?.toUpperCase()}</p>
-                    </div>
-                    <div style={{ borderTop: '1px solid #eee' }}>
-                        <button
-                            onClick={() => setActiveTab('details')}
-                            style={{
-                                width: '100%', padding: '15px 20px', textAlign: 'left',
-                                background: activeTab === 'details' ? 'var(--accent-blue)' : 'white',
-                                border: 'none', borderBottom: '1px solid #eee',
-                                color: activeTab === 'details' ? 'var(--primary-blue)' : 'inherit',
-                                fontWeight: '500', cursor: 'pointer'
-                            }}
-                        >
-                            My Details
-                        </button>
-                        {/* <button
-                            onClick={() => setActiveTab('complaints')}
-                            style={{
-                                width: '100%', padding: '15px 20px', textAlign: 'left',
-                                background: activeTab === 'complaints' ? 'var(--accent-blue)' : 'white',
-                                border: 'none',
-                                color: activeTab === 'complaints' ? 'var(--primary-blue)' : 'inherit',
-                                fontWeight: '500', cursor: 'pointer'
-                            }}
-                        >
-                            My Complaints
-                        </button> */}
+        <div style={{ display: 'flex', backgroundColor: '#F8F9FD', minHeight: '100vh', fontFamily: "'Outfit', sans-serif", color: '#131019', width: '100%' }}>
+            {/* Sidebar */}
+            <aside style={{ width: '256px', height: '100vh', backgroundColor: '#FFFFFF', borderRight: '1px solid #E0E7FF', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+                <div style={{ padding: '32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366F1' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '30px', fontWeight: 'bold' }}>account_balance</span>
+                        <span style={{ fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>LEGISTRA</span>
                     </div>
                 </div>
+                <nav style={{ flex: 1, marginTop: '16px' }}>
+                    <ul style={{ listStyle: 'none', padding: '0 16px' }}>
+                        <li style={{ marginBottom: '8px' }}>
+                            <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', color: '#64748B', textDecoration: 'none', borderRadius: '12px', fontWeight: 600 }}>
+                                <span className="material-symbols-outlined">dashboard</span>
+                                <span>Dashboard</span>
+                            </Link>
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                            <Link to="/admin/profile" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: '#EEF2FF', color: '#6366F1', textDecoration: 'none', borderRadius: '12px', fontWeight: 700 }}>
+                                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+                                <span>Profile</span>
+                            </Link>
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                            <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', color: '#64748B', textDecoration: 'none', borderRadius: '12px', fontWeight: 600 }}>
+                                <span className="material-symbols-outlined">settings</span>
+                                <span>Settings</span>
+                            </Link>
+                        </li>
+                    </ul>
+                </nav>
+                <div style={{ padding: '32px', borderTop: '1px solid #F1F5F9' }}>
+                    <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 600, padding: '0 16px', width: '100%' }}>
+                        <span className="material-symbols-outlined">logout</span>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </aside>
 
-                {/* Content */}
-                <div style={{ flex: '3 0 600px' }}>
-                    {activeTab === 'details' && (
-                        <div className="card" style={{ padding: '2rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '10px' }}>Update photo</p>
+            {/* Main Content */}
+            <main style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative' }}>
+                <header style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #E0E7FF', position: 'sticky', top: 0, zIndex: 20, padding: '24px 40px' }}>
+                    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#1E1B4B', margin: 0 }}>Profile Management</h1>
+                            <div style={{ display: 'flex', marginTop: '4px', fontSize: '14px', fontWeight: 500, color: '#94A3B8' }}>
+                                <span style={{ cursor: 'pointer' }} onClick={() => navigate('/admin')}>Dashboard</span>
+                                <span style={{ margin: '0 8px' }}>/</span>
+                                <span style={{ color: '#6366F1' }}>Profile Management</span>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                            <button style={{ padding: '10px', color: '#64748B', border: 'none', background: 'none', cursor: 'pointer', position: 'relative', borderRadius: '50%' }}>
+                                <span className="material-symbols-outlined">notifications</span>
+                                <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#EF4444', borderRadius: '50%', border: '2px solid #FFFFFF' }}></span>
+                            </button>
+                            <div style={{ height: '44px', width: '44px', borderRadius: '50%', backgroundColor: '#6366F1', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontWeight: 'bold', fontSize: '18px', shadow: '0 10px 15px -3px rgba(99, 102, 241, 0.2)', textTransform: 'uppercase' }}>
+                                <span style={{ margin: 'auto' }}>{profileData.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
 
-                                <div style={{ width: '100%', maxWidth: '400px', marginTop: '2rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Full Name</label>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        {isEditing ? (
-                                            <>
-                                                <input
-                                                    className="form-control"
-                                                    value={editName}
-                                                    onChange={e => setEditName(e.target.value)}
-                                                    style={{ flex: 1 }}
-                                                />
-                                                <button className="btn btn-primary" onClick={handleSaveName} disabled={loading}><FaSave /></button>
-                                                <button className="btn btn-outline-secondary" onClick={() => setIsEditing(false)}>Cancel</button>
-                                            </>
+                <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '40px' }}>
+                        {/* Profile Card (Left) */}
+                        <div style={{ gridColumn: 'span 4' }}>
+                            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '32px', boxShadow: '0 10px 30px rgba(99, 102, 241, 0.05)', border: '1px solid rgba(224, 231, 255, 0.5)', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'sticky', top: '144px' }}>
+                                <div style={{ position: 'relative' }}>
+                                    <div style={{ height: '208px', width: '208px', borderRadius: '50%', padding: '12px', backgroundColor: '#F5F7FF', border: '4px solid #FFFFFF', boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)', overflow: 'hidden' }}>
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                                         ) : (
-                                            <>
-                                                <div style={{ flex: 1, padding: '10px', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
-                                                <button className="btn btn-sm btn-outline-primary" onClick={() => setIsEditing(true)}>Edit</button>
-                                            </>
+                                            <div style={{ width: '100%', height: '100%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '72px', color: '#C7D2FE' }}>person</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <label style={{ position: 'absolute', bottom: '8px', right: '8px', backgroundColor: '#6366F1', color: '#FFFFFF', height: '48px', width: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', shadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', border: '4px solid #FFFFFF' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>photo_camera</span>
+                                        <input type="file" style={{ display: 'none' }} onChange={handleFileSelect} accept="image/*" />
+                                    </label>
+                                    <div style={{ position: 'absolute', top: '24px', right: '24px', height: '24px', width: '24px', backgroundColor: '#22C55E', borderRadius: '50%', border: '4px solid #FFFFFF' }}></div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', textAlign: 'center', width: '100%' }}>
+                                    {editMode.basic ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            <input
+                                                type="text"
+                                                name="fullName"
+                                                value={profileData.fullName}
+                                                onChange={handleInputChange}
+                                                style={{ width: '100%', padding: '16px', border: '1px solid #E2E8F0', borderRadius: '16px', textAlign: 'center', fontWeight: 'bold', fontSize: '20px', backgroundColor: '#F8FAFC', outline: 'none' }}
+                                                placeholder="Enter Full Name"
+                                            />
+                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                <button onClick={() => handleSave('basic')} style={{ flex: 1, backgroundColor: '#6366F1', color: '#FFFFFF', padding: '14px', borderRadius: '16px', border: 'none', fontSize: '14px', fontWeight: 900, cursor: 'pointer' }}>SAVE</button>
+                                                <button onClick={() => toggleEdit('basic')} style={{ flex: 1, backgroundColor: '#F1F5F9', color: '#475569', padding: '14px', borderRadius: '16px', border: 'none', fontSize: '14px', fontWeight: 900, cursor: 'pointer' }}>CANCEL</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <h2 style={{ fontSize: '30px', fontWeight: 900, color: '#1E1B4B', margin: 0, letterSpacing: '-0.5px' }}>{profileData.fullName}</h2>
+                                            <p style={{ color: '#6366F1', fontWeight: 800, fontSize: '12px', marginTop: '12px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Member of Legislative Assembly</p>
+                                        </>
+                                    )}
+
+                                    <div style={{ marginTop: '32px', display: 'inline-flex', alignItems: 'center', padding: '8px 20px', borderRadius: '100px', backgroundColor: '#F0FDF4', color: '#166534', fontSize: '12px', fontWeight: 900, letterSpacing: '-0.2px', border: '1px solid #DCFCE7' }}>
+                                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22C55E', marginRight: '10px' }}></span>
+                                        ACTIVE MEMBER
+                                    </div>
+                                </div>
+
+                                {!editMode.basic && (
+                                    <div style={{ width: '100%', marginTop: '40px' }}>
+                                        <button onClick={() => toggleEdit('basic')} style={{ width: '100%', backgroundColor: '#6366F1', color: '#FFFFFF', fontWeight: 900, padding: '18px', borderRadius: '16px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 20px 25px -5px rgba(99, 102, 241, 0.2)' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
+                                            <span>Edit Basic Info</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Details (Right) */}
+                        <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            {/* Constituency Details */}
+                            <section style={{ backgroundColor: '#FFFFFF', borderRadius: '32px', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.03)', border: '1px solid rgba(224, 231, 255, 0.5)', overflow: 'hidden' }}>
+                                <div style={{ padding: '32px 40px', borderBottom: '1px solid #F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <h3 style={{ fontSize: '20px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '16px', color: '#1E1B4B', margin: 0 }}>
+                                        <div style={{ padding: '10px', backgroundColor: '#EEF2FF', borderRadius: '12px', color: '#6366F1' }}>
+                                            <span className="material-symbols-outlined" style={{ fontWeight: 'bold' }}>account_balance</span>
+                                        </div>
+                                        Constituency Details
+                                    </h3>
+                                    <button onClick={() => editMode.constituency ? handleSave('constituency') : toggleEdit('constituency')} style={{ color: '#6366F1', fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', border: 'none', background: 'none', cursor: 'pointer' }}>
+                                        {editMode.constituency ? 'Save Changes' : 'Update'}
+                                    </button>
+                                </div>
+                                <div style={{ padding: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                        <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0' }}>
+                                            <span className="material-symbols-outlined" style={{ color: '#6366F1' }}>location_city</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Assembly Name</p>
+                                            {editMode.constituency ? (
+                                                <input name="constituency" value={profileData.constituency} onChange={handleInputChange} style={{ width: '100%', border: 'none', borderBottom: '2px solid #6366F1', fontWeight: 900, fontSize: '18px', padding: '4px 0', outline: 'none', marginTop: '4px', background: 'transparent' }} />
+                                            ) : (
+                                                <p style={{ fontSize: '20px', fontWeight: 900, color: '#1E1B4B', margin: '4px 0 0 0' }}>{profileData.constituency}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                        <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0' }}>
+                                            <span className="material-symbols-outlined" style={{ color: '#6366F1' }}>pin_drop</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Assembly Number</p>
+                                            {editMode.constituency ? (
+                                                <input name="assemblyNumber" value={profileData.assemblyNumber} onChange={handleInputChange} style={{ width: '100%', border: 'none', borderBottom: '2px solid #6366F1', fontWeight: 900, fontSize: '18px', padding: '4px 0', outline: 'none', marginTop: '4px', background: 'transparent' }} />
+                                            ) : (
+                                                <p style={{ fontSize: '20px', fontWeight: 900, color: '#1E1B4B', margin: '4px 0 0 0' }}>{profileData.assemblyNumber}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Contact Information */}
+                            <section style={{ backgroundColor: '#FFFFFF', borderRadius: '32px', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.03)', border: '1px solid rgba(224, 231, 255, 0.5)', overflow: 'hidden' }}>
+                                <div style={{ padding: '32px 40px', borderBottom: '1px solid #F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <h3 style={{ fontSize: '20px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '16px', color: '#1E1B4B', margin: 0 }}>
+                                        <div style={{ padding: '10px', backgroundColor: '#EEF2FF', borderRadius: '12px', color: '#6366F1' }}>
+                                            <span className="material-symbols-outlined" style={{ fontWeight: 'bold' }}>contact_mail</span>
+                                        </div>
+                                        Contact Information
+                                    </h3>
+                                    <button onClick={() => editMode.contact ? handleSave('contact') : toggleEdit('contact')} style={{ color: '#6366F1', fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', border: 'none', background: 'none', cursor: 'pointer' }}>
+                                        {editMode.contact ? 'Save Changes' : 'Update'}
+                                    </button>
+                                </div>
+                                <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+                                        <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                                            <span className="material-symbols-outlined" style={{ color: '#6366F1' }}>corporate_fare</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Office Address</p>
+                                            {editMode.contact ? (
+                                                <textarea name="officeAddress" value={profileData.officeAddress} onChange={handleInputChange} style={{ width: '100%', backgroundColor: '#F8FAFC', border: '2px solid #E2E8F0', borderRadius: '16px', padding: '16px', marginTop: '12px', fontWeight: 'bold', color: '#475569', outline: 'none', resize: 'none', fontFamily: 'inherit' }} rows="3" />
+                                            ) : (
+                                                <p style={{ fontSize: '16px', fontWeight: 700, color: '#475569', marginTop: '12px', lineHeight: 1.8, maxWidth: '448px' }}>{profileData.officeAddress}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                        <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0' }}>
+                                            <span className="material-symbols-outlined" style={{ color: '#6366F1' }}>call</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Direct Phone Number</p>
+                                            {editMode.contact ? (
+                                                <input name="phoneNumber" value={profileData.phoneNumber} onChange={handleInputChange} style={{ width: '100%', border: 'none', borderBottom: '2px solid #6366F1', fontWeight: 900, fontSize: '18px', padding: '4px 0', outline: 'none', marginTop: '4px', background: 'transparent' }} />
+                                            ) : (
+                                                <p style={{ fontSize: '20px', fontWeight: 900, color: '#1E1B4B', margin: '4px 0 0 0' }}>{profileData.phoneNumber}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Social Presence */}
+                            <section style={{ backgroundColor: '#FFFFFF', borderRadius: '32px', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.03)', border: '1px solid rgba(224, 231, 255, 0.5)', overflow: 'hidden' }}>
+                                <div style={{ padding: '32px 40px', borderBottom: '1px solid #F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <h3 style={{ fontSize: '20px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '16px', color: '#1E1B4B', margin: 0 }}>
+                                        <div style={{ padding: '10px', backgroundColor: '#EEF2FF', borderRadius: '12px', color: '#6366F1' }}>
+                                            <span className="material-symbols-outlined" style={{ fontWeight: 'bold' }}>share</span>
+                                        </div>
+                                        Social Presence
+                                    </h3>
+                                    <button onClick={() => editMode.social ? handleSave('social') : toggleEdit('social')} style={{ backgroundColor: 'rgba(99, 102, 241, 0.05)', color: '#6366F1', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 20px', borderRadius: '12px', cursor: 'pointer', border: 'none' }}>
+                                        {editMode.social ? 'Save All Links' : 'Edit All Links'}
+                                    </button>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    {/* Facebook */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 40px', borderBottom: '1px solid #F8FAFC' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1 }}>
+                                            <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: 'rgba(59, 89, 152, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B5998', border: '1px solid rgba(59, 89, 152, 0.2)' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>social_leaderboard</span>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Facebook</p>
+                                                {editMode.social ? (
+                                                    <input name="facebook" value={profileData.facebook} onChange={handleInputChange} style={{ width: '100%', border: 'none', borderBottom: '2px solid #6366F1', fontWeight: 700, fontSize: '16px', padding: '4px 0', outline: 'none', marginTop: '4px', background: 'transparent' }} />
+                                                ) : (
+                                                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#1E1B4B', margin: '4px 0 0 0' }}>{profileData.facebook}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {!editMode.social && (
+                                            <Link to="#" style={{ color: '#CBD5E1' }}><span className="material-symbols-outlined" style={{ fontSize: '20px' }}>open_in_new</span></Link>
+                                        )}
+                                    </div>
+                                    {/* Twitter */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 40px', borderBottom: '1px solid #F8FAFC' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1 }}>
+                                            <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: 'rgba(0, 0, 0, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000000', border: '1px solid rgba(0, 0, 0, 0.1)' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>close</span>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>X (Twitter)</p>
+                                                {editMode.social ? (
+                                                    <input name="twitter" value={profileData.twitter} onChange={handleInputChange} style={{ width: '100%', border: 'none', borderBottom: '2px solid #6366F1', fontWeight: 700, fontSize: '16px', padding: '4px 0', outline: 'none', marginTop: '4px', background: 'transparent' }} />
+                                                ) : (
+                                                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#1E1B4B', margin: '4px 0 0 0' }}>{profileData.twitter}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {!editMode.social && (
+                                            <Link to="#" style={{ color: '#CBD5E1' }}><span className="material-symbols-outlined" style={{ fontSize: '20px' }}>open_in_new</span></Link>
+                                        )}
+                                    </div>
+                                    {/* Instagram */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 40px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1 }}>
+                                            <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: 'rgba(228, 64, 95, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E4405F', border: '1px solid rgba(228, 64, 95, 0.2)' }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>camera_alt</span>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Instagram</p>
+                                                {editMode.social ? (
+                                                    <input name="instagram" value={profileData.instagram} onChange={handleInputChange} style={{ width: '100%', border: 'none', borderBottom: '2px solid #6366F1', fontWeight: 700, fontSize: '16px', padding: '4px 0', outline: 'none', marginTop: '4px', background: 'transparent' }} />
+                                                ) : (
+                                                    <p style={{ fontSize: '16px', fontWeight: 700, color: '#1E1B4B', margin: '4px 0 0 0' }}>{profileData.instagram}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {!editMode.social && (
+                                            <Link to="#" style={{ color: '#CBD5E1' }}><span className="material-symbols-outlined" style={{ fontSize: '20px' }}>open_in_new</span></Link>
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                            </section>
                         </div>
-                    )}
-
-                    {activeTab === 'complaints' && (
-                        <div>
-                            <div className="card" style={{ marginBottom: '2rem', textAlign: 'center', padding: '30px' }}>
-                                <h3>Manage Grievances</h3>
-                                <p style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>
-                                    Submit new complaints and track their status in the dedicated portal.
-                                </p>
-                                <Link to="/complaints" className="btn btn-primary">
-                                    <FaExternalLinkAlt style={{ marginRight: '8px' }} /> Go to Complaint Portal
-                                </Link>
-                            </div>
-
-                            <h3 style={{ marginBottom: '1rem' }}>Recent History</h3>
-                            {complaints.length === 0 ? <p>No complaints found.</p> : (
-                                <div style={{ display: 'grid', gap: '1rem' }}>
-                                    {complaints.map(c => (
-                                        <div key={c._id} className="card" style={{ padding: '1.5rem' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                                <h4 style={{ margin: 0 }}>{c.title}</h4>
-                                                <span style={{
-                                                    padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem',
-                                                    background: c.status === 'Resolved' ? '#d4edda' : (c.status === 'In Review' ? '#fff3cd' : '#e2e3e5'),
-                                                    color: c.status === 'Resolved' ? '#155724' : (c.status === 'In Review' ? '#856404' : '#383d41'),
-                                                    fontWeight: '600'
-                                                }}>
-                                                    {c.status}
-                                                </span>
-                                            </div>
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>{c.description}</p>
-                                            <div style={{ marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                Submitted on: {new Date(c.createdAt).toLocaleDateString()}
-                                            </div>
-                                            {c.adminResponse && (
-                                                <div style={{ marginTop: '1rem', padding: '10px', background: 'var(--bg-light)', borderRadius: '5px', borderLeft: '3px solid var(--primary-blue)' }}>
-                                                    <strong>Admin Response:</strong> {c.adminResponse}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

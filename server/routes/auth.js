@@ -190,7 +190,9 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
         const {
             fullName, username, email, password,
             phoneNumber, dateOfBirth, gender,
-            constituency, address, education
+            constituency, address, education,
+            assemblyNumber, officeAddress,
+            facebook, twitter, instagram
         } = req.body;
 
         // Check for unique constraints if username/email are changing

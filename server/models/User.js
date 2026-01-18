@@ -13,6 +13,11 @@ const UserSchema = new mongoose.Schema({
   gender: { type: String, enum: ['Male', 'Female', 'Other'] },
   constituency: { type: String },
   address: { type: String },
+  assemblyNumber: { type: String },
+  officeAddress: { type: String },
+  facebook: { type: String },
+  twitter: { type: String },
+  instagram: { type: String },
   education: [{
     qualification: { type: String },
     institution: { type: String },
