@@ -1,16 +1,43 @@
 const mongoose = require('mongoose');
 
 const AttendanceSchema = new mongoose.Schema({
-  season: { type: String, enum: ['Season 1', 'Season 2', 'Season 3', 'Season 4'], required: true },
-  mla: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  days: [{
-    date: { type: Date, required: true },
-    present: { type: Boolean, required: true },
-    status: { type: String, enum: ['Pending', 'Verified', 'Non-Verified'], default: 'Pending' },
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    remarks: { type: String },
-    createdAt: { type: Date, default: Date.now }
-  }]
+  season: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Season', 
+    required: true 
+  },
+  mla: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
+  date: { 
+    type: Date, 
+    required: true 
+  },
+  status: { 
+    type: String, 
+    enum: ['Present', 'Absent'], 
+    required: true 
+  },
+  remarks: { 
+    type: String,
+    trim: true
+  },
+  isVerified: { 
+    type: Boolean, 
+    default: false 
+  },
+  verifiedBy: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  },
+  verifiedAt: {
+    type: Date
+  }
 }, { timestamps: true });
+
+// Compound index to prevent duplicate attendance for same MLA on same date in same season
+AttendanceSchema.index({ season: 1, mla: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Attendance', AttendanceSchema);

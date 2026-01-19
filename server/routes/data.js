@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
 const Attendance = require('../models/Attendance');
+const Season = require('../models/Season');
+const Schedule = require('../models/Schedule');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
@@ -133,6 +135,42 @@ router.put('/admin/attendance/:id', auth(['admin']), async (req, res) => {
       { new: true }
     );
     res.json(attendance);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /public/attendance/percentage - Get verified attendance percentage
+router.get('/public/attendance/percentage', async (req, res) => {
+  try {
+    const totalAttendance = await Attendance.countDocuments();
+    const verifiedPresent = await Attendance.countDocuments({ 
+      isVerified: true, 
+      status: 'Present' 
+    });
+    
+    const percentage = totalAttendance > 0 
+      ? ((verifiedPresent / totalAttendance) * 100).toFixed(1) 
+      : 0;
+
+    res.json({ 
+      percentage,
+      totalRecords: totalAttendance,
+      verifiedPresent 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /public/schedules - Get approved schedules only
+router.get('/public/schedules', async (req, res) => {
+  try {
+    const schedules = await Schedule.find({ status: 'Approved' })
+      .populate('admin', 'fullName')
+      .sort({ date: 1 });
+
+    res.json(schedules);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

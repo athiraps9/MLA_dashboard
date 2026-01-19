@@ -3,6 +3,9 @@ import api from '../utils/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import AvatarUpload from '../components/AvatarUpload';
+import AttendanceTree from '../components/AttendanceTree';
+import SimpleCalendar from '../components/SimpleCalendar';
+import ScheduleCard from '../components/ScheduleCard';
 import { SERVER_URL } from '../utils/api';
 import { FaUserCircle, FaSave, FaUser, FaLock, FaTrash, FaPlus } from 'react-icons/fa';
 import '../styles/variables.css';
@@ -13,8 +16,18 @@ const PADashboard = () => {
     const [loading, setLoading] = useState(true);
 
     // Attendance State
-    const [attendanceForm, setAttendanceForm] = useState({ season: 'Season 1', date: '', present: true, remarks: '' });
+    const [seasons, setSeasons] = useState([]);
+    const [attendanceForm, setAttendanceForm] = useState({ seasonId: '', date: '', status: 'Present', remarks: '', mlaId: '' });
     const [pendingAttendance, setPendingAttendance] = useState([]);
+    const [allAttendance, setAllAttendance] = useState([]);
+
+    // Scheduling State
+    const [schedules, setSchedules] = useState([]);
+    const [admins, setAdmins] = useState([]);
+    const [scheduleForm, setScheduleForm] = useState({ date: '', time: '', venue: '', scheduleType: '', description: '', adminId: '' });
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [availability, setAvailability] = useState(null);
+    const [busyDates, setBusyDates] = useState([]);
 
     // Project State
     const [projects, setProjects] = useState([]);
@@ -97,35 +110,118 @@ const PADashboard = () => {
     // Tab Handler
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        if (tab === 'attendance') fetchAttendance();
+        if (tab === 'attendance') {
+            fetchSeasons();
+            fetchAttendance();
+            fetchAllAttendance();
+        }
+        if (tab === 'scheduling') {
+            fetchSchedules();
+            fetchAdmins();
+        }
         if (tab === 'projects') fetchProjects();
         if (tab === 'complaints') fetchComplaints();
+    };
+
+    // Fetch Seasons
+    const fetchSeasons = async () => {
+        try {
+            const res = await api.get('/pa/seasons');
+            setSeasons(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch All Attendance for Tree View
+    const fetchAllAttendance = async () => {
+        try {
+            const res = await api.get('/pa/attendance/all');
+            setAllAttendance(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch Schedules
+    const fetchSchedules = async () => {
+        try {
+            const res = await api.get('/pa/schedules');
+            setSchedules(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch Admins and set default
+    const fetchAdmins = async () => {
+        try {
+            const res = await api.get('/pa/admins');
+            setAdmins(res.data);
+            if (res.data.length > 0) {
+                const defaultAdminId = res.data[0]._id;
+                setScheduleForm(prev => ({ ...prev, adminId: defaultAdminId }));
+                fetchBusyDates(defaultAdminId);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch Busy Dates for Admin
+    const fetchBusyDates = async (adminId) => {
+        try {
+            const res = await api.get(`/pa/admin-busy-dates/${adminId}`);
+            setBusyDates(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Check Availability
+    const checkAvailability = async (adminId, date) => {
+        try {
+            const formattedDate = new Date(date).toISOString().split('T')[0];
+            const res = await api.get(`/pa/availability/${adminId}/${formattedDate}`);
+            setAvailability(res.data);
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     // Attendance Handler
     const handleAttendanceSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Assume MLA ID is available from context or user object. For now, fetching first MLA or hardcoding if using context in future
-            // A PA usually works for one MLA.
-            const user = JSON.parse(localStorage.getItem('user'));
-            // Fetch associated MLA ID ... for now assume we pass it or backend handles if linked
-            // Note: In real app, PA would be linked to MLA. Let's create a temporary workaround:
-            // Since backend expects MLA ID for creating attendance, we need a way to get it.
-            // For now, let's just use the current user ID if they were an MLA, but they are PA.
-            // Backend update required to infer MLA from PA or pass it. 
-            // Workaround: Get list of MLAs and select one (Admin style) or assume single MLA context.
-            // Let's assume mlaId is passed in body. We need to fetch it.
+            // Get MLA ID - for demo, fetch first MLA
+            const mlaRes = await api.get('/mla-directory');
+            const mlaId = attendanceForm.mlaId || mlaRes.data[0]?._id;
 
-            // Simplified: Fetch an MLA to assign to. 
-            const mlaRes = await api.get('/mla-directory'); // Assume this exists public/auth
-            const mlaId = mlaRes.data[0]?._id; // Just pick first for demo if not linked
+            if (!mlaId) {
+                alert('No MLA found. Please ensure an MLA exists in the system.');
+                return;
+            }
 
             await api.post('/pa/attendance', { ...attendanceForm, mlaId });
-            alert('Attendance added');
+            alert('Attendance added successfully!');
+            setAttendanceForm({ seasonId: '', date: '', status: 'Present', remarks: '', mlaId: '' });
             fetchAttendance();
+            fetchAllAttendance();
         } catch (err) {
             alert('Error adding attendance: ' + (err.response?.data?.message || err.message));
+        }
+    };
+
+    // Schedule Handler
+    const handleScheduleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/pa/schedule', scheduleForm);
+            alert('Schedule created successfully!');
+            setScheduleForm({ date: '', time: '', venue: '', scheduleType: '', description: '', adminId: '' });
+            fetchSchedules();
+        } catch (err) {
+            alert('Error creating schedule: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -215,10 +311,26 @@ const PADashboard = () => {
         nav: { display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #ccc' },
         navItem: (active) => ({ padding: '10px 20px', cursor: 'pointer', borderBottom: active ? '2px solid blue' : 'none', color: active ? 'blue' : 'black' }),
         grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' },
-        statCard: { padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
-        inputGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
-        label: { fontWeight: 'bold', fontSize: '0.9rem', color: '#1a365d' },
-        input: { padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0', fontSize: '1rem', width: '100%' }
+        statCard: {
+            padding: '24px',
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            boxShadow: '0 8px 32px rgba(31, 38, 135, 0.07)',
+            transition: 'transform 0.3s ease'
+        },
+        inputGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
+        label: { fontWeight: '700', fontSize: '0.9rem', color: '#1a365d', marginBottom: '4px' },
+        input: {
+            padding: '12px',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            fontSize: '1rem',
+            width: '100%',
+            background: 'rgba(255,255,255,0.8)',
+            transition: 'border-color 0.2s ease'
+        }
     };
 
     return (
@@ -226,7 +338,7 @@ const PADashboard = () => {
             <h1>PA Dashboard</h1>
 
             <div style={styles.nav}>
-                {['dashboard', 'attendance', 'projects', 'complaints', 'profile'].map(tab => (
+                {['dashboard', 'attendance', 'scheduling', 'projects', 'complaints', 'profile'].map(tab => (
                     <div key={tab} style={styles.navItem(activeTab === tab)} onClick={() => handleTabChange(tab)}>
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </div>
@@ -244,91 +356,268 @@ const PADashboard = () => {
             {activeTab === 'attendance' && (
                 <div>
                     <Card title="Add Daily Attendance">
-                        <form onSubmit={handleAttendanceSubmit} style={{ display: 'grid', gap: '15px', maxWidth: '500px' }}>
-                            <select value={attendanceForm.season} onChange={e => setAttendanceForm({ ...attendanceForm, season: e.target.value })} style={{ padding: '8px' }}>
-                                <option>Season 1</option><option>Season 2</option><option>Season 3</option><option>Season 4</option>
-                            </select>
-                            <input type="date" value={attendanceForm.date} onChange={e => setAttendanceForm({ ...attendanceForm, date: e.target.value })} required style={{ padding: '8px' }} />
-                            <label>
-                                <input type="checkbox" checked={attendanceForm.present} onChange={e => setAttendanceForm({ ...attendanceForm, present: e.target.checked })} /> Present
-                            </label>
-                            <textarea placeholder="Remarks" value={attendanceForm.remarks} onChange={e => setAttendanceForm({ ...attendanceForm, remarks: e.target.value })} style={{ padding: '8px' }} />
-                            <Button type="submit">Add Entry</Button>
+                        <form onSubmit={handleAttendanceSubmit} style={{ display: 'grid', gap: '15px', maxWidth: '600px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Season</label>
+                                <select
+                                    className="form-control"
+                                    value={attendanceForm.seasonId}
+                                    onChange={e => setAttendanceForm({ ...attendanceForm, seasonId: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select Season</option>
+                                    {seasons.map(season => (
+                                        <option key={season._id} value={season._id}>{season.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Date</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={attendanceForm.date}
+                                    onChange={e => setAttendanceForm({ ...attendanceForm, date: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Status</label>
+                                <select
+                                    className="form-control"
+                                    value={attendanceForm.status}
+                                    onChange={e => setAttendanceForm({ ...attendanceForm, status: e.target.value })}
+                                >
+                                    <option value="Present">Present</option>
+                                    <option value="Absent">Absent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Remarks</label>
+                                <textarea
+                                    className="form-control"
+                                    placeholder="Optional remarks"
+                                    value={attendanceForm.remarks}
+                                    onChange={e => setAttendanceForm({ ...attendanceForm, remarks: e.target.value })}
+                                    rows="3"
+                                />
+                            </div>
+                            <Button type="submit">Add Attendance</Button>
                         </form>
                     </Card>
 
-                    <h3 className="mt-lg">Pending Verification</h3>
-                    {pendingAttendance.map(p => (
-                        <div key={p._id} className="card p-3 mb-2">
-                            <strong>{new Date(p.date).toLocaleDateString()}</strong> - {p.season} - {p.present ? 'Present' : 'Absent'}
-                        </div>
-                    ))}
-                </div>
-            )}
+                    <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Attendance Tree View</h3>
+                    <AttendanceTree attendance={allAttendance} isAdmin={false} />
 
-            {activeTab === 'projects' && (
-                <div>
-                    <h3>Project Updates</h3>
-                    {projects.map(p => (
-                        <Card key={p._id} title={p.title}>
-                            <p>Status: {p.status}</p>
-                            <Button onClick={() => handleProjectUpdate(p._id, 'in-progress')}>Mark In Progress</Button>
-                            <Button onClick={() => handleProjectUpdate(p._id, 'completed')}>Mark Completed</Button>
-                        </Card>
-                    ))}
-                </div>
-            )}
-
-            {activeTab === 'complaints' && (
-                <div>
-                    <h3>Complaint Management</h3>
-                    {complaints.map(c => (
-                        <div key={c._id} className="card p-3 mb-3">
-                            <h4>{c.title}</h4>
-                            <p>{c.description}</p>
-                            <p>Status: <strong>{c.status}</strong></p>
-                            {c.adminResponse && <p>Admin: {c.adminResponse}</p>}
-                            <div className="flex gap-2">
-                                <Button onClick={() => handleComplaintUpdate(c._id, 'In Progress', prompt('Enter update:'))}>Update Status</Button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {activeTab === 'profile' && (
-                <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                    <Card title="My Profile">
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
-                            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>Click photo to update</p>
-
-                            <div style={{ width: '100%', maxWidth: '400px' }}>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name</label>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    {isEditing ? (
-                                        <>
-                                            <input
-                                                value={editData.fullName}
-                                                onChange={e => setEditData({ ...editData, fullName: e.target.value })}
-                                                style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-                                            />
-                                            <Button onClick={handleProfileSave}><FaSave /></Button>
-                                            <Button variant="danger" onClick={() => setIsEditing(false)}>X</Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div style={{ flex: 1, padding: '10px', fontSize: '1.1rem', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
-                                            <span style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsEditing(true)}>✏️ Edit</span>
-                                        </>
+                    <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Pending Verification</h3>
+                    {pendingAttendance.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No pending attendance records.</p>
+                    ) : (
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                            {pendingAttendance.map(p => (
+                                <div key={p._id} className="card" style={{ padding: '1rem' }}>
+                                    <strong>{p.season?.name || 'Unknown Season'}</strong>
+                                    <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '5px' }}>
+                                        {new Date(p.date).toLocaleDateString()} - {p.status}
+                                    </div>
+                                    {p.remarks && (
+                                        <div style={{ fontSize: '0.85rem', color: '#555', marginTop: '5px' }}>{p.remarks}</div>
                                     )}
                                 </div>
-                            </div>
+                            ))}
                         </div>
-                    </Card>
+                    )}
                 </div>
             )}
-        </div>
+
+            {activeTab === 'scheduling' && (
+                <div>
+                    <h2 style={{ marginBottom: '20px' }}>Schedule Management</h2>
+
+                    {/* Create Schedule Form */}
+                    <Card title="Create New Schedule">
+                        <form onSubmit={handleScheduleSubmit} style={{ display: 'grid', gap: '15px', maxWidth: '600px' }}>
+                            {admins.length > 0 && (
+                                <div style={{ padding: '10px', background: '#f0f4f8', borderRadius: '8px', border: '1px solid #d1d9e6', color: '#2d3748', fontSize: '0.9rem', fontWeight: '500' }}>
+                                    Schedule with: <strong>{admins[0].fullName}</strong>
+                                </div>
+                            )}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={scheduleForm.date}
+                                        onChange={e => {
+                                            setScheduleForm({ ...scheduleForm, date: e.target.value });
+                                            if (scheduleForm.adminId && e.target.value) {
+                                                checkAvailability(scheduleForm.adminId, e.target.value);
+                                            }
+                                        }}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Time</label>
+                                    <input
+                                        type="time"
+                                        className="form-control"
+                                        value={scheduleForm.time}
+                                        onChange={e => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Availability Indicator */}
+                            {availability && (
+                                <div style={{
+                                    padding: '10px',
+                                    borderRadius: '6px',
+                                    backgroundColor: availability.isAvailable ? '#d4edda' : '#f8d7da',
+                                    color: availability.isAvailable ? '#155724' : '#721c24',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {availability.isAvailable ? '✓ Admin is available on this date' : '✗ Admin has existing schedules on this date'}
+                                </div>
+                            )}
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Venue</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={scheduleForm.venue}
+                                    onChange={e => setScheduleForm({ ...scheduleForm, venue: e.target.value })}
+                                    required
+                                    placeholder="e.g., Assembly Hall"
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Schedule Type</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={scheduleForm.scheduleType}
+                                    onChange={e => setScheduleForm({ ...scheduleForm, scheduleType: e.target.value })}
+                                    required
+                                    placeholder="e.g., Meeting, Event, Session"
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Description</label>
+                                <textarea
+                                    className="form-control"
+                                    value={scheduleForm.description}
+                                    onChange={e => setScheduleForm({ ...scheduleForm, description: e.target.value })}
+                                    rows="3"
+                                    placeholder="Optional description"
+                                />
+                            </div>
+                            <Button type="submit">Create Schedule</Button>
+                        </form>
+                    </Card>
+
+                    {/* Calendar View */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>Calendar View</h3>
+                    <SimpleCalendar
+                        schedules={schedules}
+                        busyDates={busyDates}
+                        onDateClick={(date) => {
+                            setSelectedDate(date);
+                            const formattedDate = date.toISOString().split('T')[0];
+                            setScheduleForm(prev => ({ ...prev, date: formattedDate }));
+                            if (scheduleForm.adminId) {
+                                checkAvailability(scheduleForm.adminId, formattedDate);
+                            }
+                        }}
+                    />
+
+                    {/* My Schedules */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>My Schedules</h3>
+                    {schedules.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No schedules created yet.</p>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                            {schedules.map(schedule => (
+                                <ScheduleCard key={schedule._id} schedule={schedule} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )
+            }
+
+            {
+                activeTab === 'projects' && (
+                    <div>
+                        <h3>Project Updates</h3>
+                        {projects.map(p => (
+                            <Card key={p._id} title={p.title}>
+                                <p>Status: {p.status}</p>
+                                <Button onClick={() => handleProjectUpdate(p._id, 'in-progress')}>Mark In Progress</Button>
+                                <Button onClick={() => handleProjectUpdate(p._id, 'completed')}>Mark Completed</Button>
+                            </Card>
+                        ))}
+                    </div>
+                )
+            }
+
+            {
+                activeTab === 'complaints' && (
+                    <div>
+                        <h3>Complaint Management</h3>
+                        {complaints.map(c => (
+                            <div key={c._id} className="card p-3 mb-3">
+                                <h4>{c.title}</h4>
+                                <p>{c.description}</p>
+                                <p>Status: <strong>{c.status}</strong></p>
+                                {c.adminResponse && <p>Admin: {c.adminResponse}</p>}
+                                <div className="flex gap-2">
+                                    <Button onClick={() => handleComplaintUpdate(c._id, 'In Progress', prompt('Enter update:'))}>Update Status</Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
+            }
+
+            {
+                activeTab === 'profile' && (
+                    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                        <Card title="My Profile">
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
+                                <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>Click photo to update</p>
+
+                                <div style={{ width: '100%', maxWidth: '400px' }}>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name</label>
+                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                        {isEditing ? (
+                                            <>
+                                                <input
+                                                    value={editData.fullName}
+                                                    onChange={e => setEditData({ ...editData, fullName: e.target.value })}
+                                                    style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                                                />
+                                                <Button onClick={handleProfileSave}><FaSave /></Button>
+                                                <Button variant="danger" onClick={() => setIsEditing(false)}>X</Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ flex: 1, padding: '10px', fontSize: '1.1rem', borderBottom: '1px solid #eee' }}>{user.fullName}</div>
+                                                <span style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsEditing(true)}>✏️ Edit</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

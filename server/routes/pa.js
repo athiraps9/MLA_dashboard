@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Attendance = require('../models/Attendance');
+const Season = require('../models/Season');
+const Schedule = require('../models/Schedule');
 const Project = require('../models/Project');
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
@@ -18,12 +20,9 @@ const ensurePA = (req, res, next) => {
 router.get('/dashboard', async (req, res) => {
     try {
         const attendanceRecords = await Attendance.countDocuments();
-        const pendingVerification = await Attendance.countDocuments({ "days.status": "Pending" });
+        const pendingVerification = await Attendance.countDocuments({ isVerified: false });
         const projectsUpdated = await Project.countDocuments({ status: { $in: ['in-progress', 'completed'] } }); 
         
-        // This is a simplification; ideally we track which PA updated what. 
-        // For now, returning global stats relevant to PA.
-
         res.json({
             daysEntered: attendanceRecords, 
             attendanceRecords,
@@ -37,66 +36,60 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // ATTENDANCE ROUTES
-//Test
 
-// POST /pa/attendance - Add new season or add days to season
+// POST /pa/attendance - Add daily attendance
 router.post('/attendance', auth, ensurePA, async (req, res) => {
-    const { season, date, present, remarks, mlaId } = req.body;
+    const { seasonId, date, status, remarks, mlaId } = req.body;
+    
     try {
-        let attendance = await Attendance.findOne({ season, mla: mlaId });
-        
-        if (!attendance) {
-            attendance = new Attendance({
-                season,
-                mla: mlaId,
-                days: []
-            });
+        // Validate season exists
+        const season = await Season.findById(seasonId);
+        if (!season) {
+            return res.status(404).json({ message: 'Season not found' });
         }
 
-        // Check if date already exists in this season
-        const existingDay = attendance.days.find(d => new Date(d.date).toDateString() === new Date(date).toDateString());
-        if (existingDay) {
-            return res.status(400).json({ message: 'Attendance for this date already exists in this season' });
+        // Check if attendance already exists for this date
+        const existingAttendance = await Attendance.findOne({
+            season: seasonId,
+            mla: mlaId,
+            date: new Date(date)
+        });
+
+        if (existingAttendance) {
+            return res.status(400).json({ message: 'Attendance for this date already exists' });
         }
 
-        attendance.days.push({
+        // Create new attendance record
+        const attendance = new Attendance({
+            season: seasonId,
+            mla: mlaId,
             date,
-            present,
-            status: 'Pending',
+            status,
             remarks
         });
 
         await attendance.save();
-        res.json(attendance);
+        
+        const populatedAttendance = await Attendance.findById(attendance._id)
+            .populate('season', 'name')
+            .populate('mla', 'fullName');
+
+        res.json(populatedAttendance);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: err.message || 'Server error' });
     }
 });
 
 // GET /pa/attendance/pending
 router.get('/attendance/pending', auth, ensurePA, async (req, res) => {
     try {
-        const seasons = await Attendance.find({ "days.status": "Pending" }).populate('mla', 'fullName');
-        let pendingDays = [];
-        
-        seasons.forEach(s => {
-            s.days.forEach(d => {
-                if (d.status === 'Pending') {
-                    pendingDays.push({
-                        _id: d._id,
-                        seasonId: s._id,
-                        season: s.season,
-                        mlaName: s.mla.fullName,
-                        date: d.date,
-                        present: d.present,
-                        remarks: d.remarks
-                    });
-                }
-            });
-        });
+        const pendingAttendance = await Attendance.find({ isVerified: false })
+            .populate('season', 'name')
+            .populate('mla', 'fullName')
+            .sort({ date: -1 });
 
-        res.json(pendingDays);
+        res.json(pendingAttendance);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -164,6 +157,143 @@ router.put('/complaint/:id', auth, ensurePA, async (req, res) => {
             { new: true }
         );
         res.json(complaint);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ==================== SCHEDULING ROUTES ====================
+
+// GET /pa/seasons - Get all active seasons
+router.get('/seasons', auth, ensurePA, async (req, res) => {
+    try {
+        const seasons = await Season.find({ isActive: true }).sort({ startDate: -1 });
+        res.json(seasons);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /pa/attendance/all - Get all attendance records for tree view
+router.get('/attendance/all', auth(), ensurePA, async (req, res) => {
+    try {
+        const attendance = await Attendance.find()
+            .populate('season', 'name')
+            .populate('mla', 'fullName')
+            .sort({ 'date': -1 });
+
+        res.json(attendance);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// POST /pa/schedule - Create new schedule
+router.post('/schedule', auth(), ensurePA, async (req, res) => {
+    try {
+        const { date, time, venue, scheduleType, description, adminId } = req.body;
+
+        // Validate admin exists
+        const admin = await User.findById(adminId);
+        if (!admin || admin.role !== 'admin') {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        // Create schedule
+        const schedule = new Schedule({
+            date,
+            time,
+            venue,
+            scheduleType,
+            description,
+            admin: adminId,
+            createdBy: req.user.id,
+            status: 'Pending'
+        });
+
+        await schedule.save();
+
+        const populatedSchedule = await Schedule.findById(schedule._id)
+            .populate('admin', 'fullName')
+            .populate('createdBy', 'fullName');
+
+        res.json(populatedSchedule);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message || 'Server error' });
+    }
+});
+
+// GET /pa/schedules - Get all schedules created by PA
+router.get('/schedules', auth(), ensurePA, async (req, res) => {
+    try {
+        const schedules = await Schedule.find({ createdBy: req.user.id })
+            .populate('admin', 'fullName')
+            .populate('approvedBy', 'fullName')
+            .sort({ date: -1 });
+
+        res.json(schedules);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /pa/availability/:adminId/:date - Check admin availability for a date
+router.get('/availability/:adminId/:date', auth(), ensurePA, async (req, res) => {
+    try {
+        const { adminId, date } = req.params;
+        
+        const targetDate = new Date(date);
+        targetDate.setHours(0, 0, 0, 0);
+        
+        const nextDay = new Date(targetDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        // Find schedules for this admin on this date
+        const schedules = await Schedule.find({
+            admin: adminId,
+            date: { $gte: targetDate, $lt: nextDay },
+            status: { $in: ['Pending', 'Approved'] }
+        }).sort({ time: 1 });
+
+        res.json({
+            date: targetDate,
+            isAvailable: schedules.length === 0,
+            schedules: schedules
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /pa/admins - Get all admins for scheduling
+router.get('/admins', auth(), ensurePA, async (req, res) => {
+    try {
+        const admins = await User.find({ role: 'admin' }).select('fullName email');
+        res.json(admins);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /pa/admin-busy-dates/:adminId - Get dates where admin is busy (Pending or Approved)
+router.get('/admin-busy-dates/:adminId', auth(), ensurePA, async (req, res) => {
+    try {
+        const { adminId } = req.params;
+        const busySchedules = await Schedule.find({
+            admin: adminId,
+            status: { $in: ['Pending', 'Approved'] }
+        }).select('date');
+
+        const busyDates = busySchedules.map(s => s.date.toISOString().split('T')[0]);
+        // Return unique dates
+        res.json([...new Set(busyDates)]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });

@@ -4,23 +4,37 @@ import api from '../utils/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import AdminLandingCMS from '../components/AdminLandingCMS';
-import PAManagement from '../components/PAManagement'; // Import PA Management
+import PAManagement from '../components/PAManagement';
 import AvatarUpload from '../components/AvatarUpload';
+import AttendanceTree from '../components/AttendanceTree';
+import SimpleCalendar from '../components/SimpleCalendar';
+import ScheduleCard from '../components/ScheduleCard';
 import { SERVER_URL } from '../utils/api';
-import { FaUserCircle, FaSave, FaUser } from 'react-icons/fa';
+import { FaUserCircle, FaSave, FaUser, FaPlus } from 'react-icons/fa';
 import '../styles/variables.css';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('verification');
     const [pending, setPending] = useState({ projects: [], attendance: [] });
     const [loading, setLoading] = useState(true);
-    const [editMode, setEditMode] = useState(null); // ID of project being edited
+    const [editMode, setEditMode] = useState(null);
     const [editData, setEditData] = useState({});
 
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || {});
     const [previewUrl, setPreviewUrl] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
+
+    // Attendance & Season State
+    const [seasons, setSeasons] = useState([]);
+    const [allAttendance, setAllAttendance] = useState([]);
+    const [seasonForm, setSeasonForm] = useState({ name: '', startDate: '', endDate: '', description: '' });
+    const [showSeasonForm, setShowSeasonForm] = useState(false);
+
+    // Scheduling State
+    const [schedules, setSchedules] = useState([]);
+    const [todaySchedules, setTodaySchedules] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(null);
 
     useEffect(() => {
         fetchPending();
@@ -126,6 +140,116 @@ const AdminDashboard = () => {
         }
     };
 
+    // Fetch Seasons
+    const fetchSeasons = async () => {
+        try {
+            const res = await api.get('/admin/seasons');
+            setSeasons(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch All Attendance
+    const fetchAllAttendance = async () => {
+        try {
+            const res = await api.get('/admin/attendance/all');
+            setAllAttendance(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch Schedules
+    const fetchSchedules = async () => {
+        try {
+            const res = await api.get('/admin/schedules');
+            setSchedules(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Fetch Today's Schedules
+    const fetchTodaySchedules = async () => {
+        try {
+            const res = await api.get('/admin/schedules/today');
+            setTodaySchedules(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Create Season
+    const handleCreateSeason = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/admin/season', seasonForm);
+            setSeasonForm({ name: '', startDate: '', endDate: '', description: '' });
+            setShowSeasonForm(false);
+            fetchSeasons();
+            alert('Season created successfully!');
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || 'Failed to create season');
+        }
+    };
+
+    // Verify Attendance
+    const handleVerifyAttendance = async (id) => {
+        try {
+            await api.put(`/admin/attendance/${id}/verify`, { isVerified: true, remarks: 'Verified by Admin' });
+            fetchAllAttendance();
+            fetchPending();
+            alert('Attendance verified!');
+        } catch (err) {
+            console.error(err);
+            alert('Verification failed');
+        }
+    };
+
+    // Reject Attendance
+    const handleRejectAttendance = async (id) => {
+        try {
+            const remarks = prompt('Enter rejection reason (optional):', 'Invalid record');
+            if (remarks === null) return;
+            await api.put(`/admin/attendance/${id}/verify`, { isVerified: false, remarks: remarks || 'Rejected' });
+            fetchAllAttendance();
+            fetchPending();
+            alert('Attendance rejected.');
+        } catch (err) {
+            console.error(err);
+            alert('Action failed');
+        }
+    };
+
+    // Approve Schedule
+    const handleApproveSchedule = async (id) => {
+        try {
+            await api.put(`/admin/schedule/${id}/approve`);
+            fetchSchedules();
+            fetchTodaySchedules();
+            alert('Schedule approved!');
+        } catch (err) {
+            console.error(err);
+            alert('Approval failed');
+        }
+    };
+
+    // Cancel Schedule
+    const handleCancelSchedule = async (id) => {
+        if (!window.confirm('Are you sure you want to cancel this schedule?')) return;
+        try {
+            await api.put(`/admin/schedule/${id}/cancel`);
+            fetchSchedules();
+            fetchTodaySchedules();
+            alert('Schedule cancelled!');
+        } catch (err) {
+            console.error(err);
+            alert('Cancellation failed');
+        }
+    };
+
 
     if (loading) return <div className="text-center mt-lg">Loading Admin Panel...</div>;
 
@@ -163,6 +287,18 @@ const AdminDashboard = () => {
                     onClick={() => setActiveTab('pa_management')}
                 >
                     PA Management
+                </button>
+                <button
+                    style={{ ...styles.tab, ...(activeTab === 'attendance' ? styles.activeTab : {}) }}
+                    onClick={() => { setActiveTab('attendance'); fetchSeasons(); fetchAllAttendance(); }}
+                >
+                    Attendance
+                </button>
+                <button
+                    style={{ ...styles.tab, ...(activeTab === 'scheduling' ? styles.activeTab : {}) }}
+                    onClick={() => { setActiveTab('scheduling'); fetchSchedules(); fetchTodaySchedules(); }}
+                >
+                    Scheduling
                 </button>
                 <button
                     style={{ ...styles.tab, ...(activeTab === 'profile' ? styles.activeTab : {}) }}
@@ -317,6 +453,214 @@ const AdminDashboard = () => {
                         )}
                     </div>
                 </>
+            )}
+
+            {activeTab === 'attendance' && (
+                <div>
+                    <h2 style={{ borderBottom: '2px solid var(--secondary-color)', paddingBottom: '10px' }}>Attendance Management</h2>
+
+                    {/* Season Management Section */}
+                    <div style={{ marginTop: '20px', marginBottom: '30px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <h3>Seasons</h3>
+                            <Button onClick={() => setShowSeasonForm(!showSeasonForm)}>
+                                <FaPlus /> {showSeasonForm ? 'Cancel' : 'Create Season'}
+                            </Button>
+                        </div>
+
+                        {showSeasonForm && (
+                            <Card title="Create New Season">
+                                <form onSubmit={handleCreateSeason} style={{ display: 'grid', gap: '15px', maxWidth: '600px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Season Name</label>
+                                        <input
+                                            className="form-control"
+                                            value={seasonForm.name}
+                                            onChange={e => setSeasonForm({ ...seasonForm, name: e.target.value })}
+                                            required
+                                            placeholder="e.g., Winter Session 2026"
+                                        />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Start Date</label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={seasonForm.startDate}
+                                                onChange={e => setSeasonForm({ ...seasonForm, startDate: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>End Date</label>
+                                            <input
+                                                type="date"
+                                                className="form-control"
+                                                value={seasonForm.endDate}
+                                                onChange={e => setSeasonForm({ ...seasonForm, endDate: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Description</label>
+                                        <textarea
+                                            className="form-control"
+                                            value={seasonForm.description}
+                                            onChange={e => setSeasonForm({ ...seasonForm, description: e.target.value })}
+                                            rows="3"
+                                            placeholder="Optional description"
+                                        />
+                                    </div>
+                                    <Button type="submit">Create Season</Button>
+                                </form>
+                            </Card>
+                        )}
+
+                        {/* List of Seasons */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', marginTop: '20px' }}>
+                            {seasons.map(season => (
+                                <div key={season._id} className="card" style={{ padding: '1.5rem' }}>
+                                    <h4 style={{ marginBottom: '10px' }}>{season.name}</h4>
+                                    <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                                        {new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()}
+                                    </p>
+                                    {season.description && (
+                                        <p style={{ fontSize: '0.85rem', marginTop: '10px', color: '#555' }}>{season.description}</p>
+                                    )}
+                                    <span style={{
+                                        display: 'inline-block',
+                                        marginTop: '10px',
+                                        padding: '4px 10px',
+                                        borderRadius: '12px',
+                                        fontSize: '0.8rem',
+                                        backgroundColor: season.isActive ? '#d4edda' : '#f8d7da',
+                                        color: season.isActive ? '#155724' : '#721c24'
+                                    }}>
+                                        {season.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Attendance Tree View */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>All Attendance Records</h3>
+                    <div style={{ marginBottom: '20px' }}>
+                        <AttendanceTree
+                            attendance={allAttendance}
+                            isAdmin={true}
+                            onVerify={handleVerifyAttendance}
+                            onReject={handleRejectAttendance}
+                        />
+                    </div>
+
+                    {/* Pending Verification */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>Pending Verification</h3>
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                        {pending.attendance.filter(a => !a.isVerified).map(record => (
+                            <div key={record._id} className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <strong>{record.mla?.fullName || 'Unknown MLA'}</strong>
+                                    <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '5px' }}>
+                                        {new Date(record.date).toLocaleDateString()} - {record.status}
+                                    </div>
+                                    {record.remarks && (
+                                        <div style={{ fontSize: '0.85rem', color: '#555', marginTop: '5px' }}>{record.remarks}</div>
+                                    )}
+                                </div>
+                                <Button variant="success" onClick={() => handleVerifyAttendance(record._id)}>
+                                    Verify
+                                </Button>
+                            </div>
+                        ))}
+                        {pending.attendance.filter(a => !a.isVerified).length === 0 && (
+                            <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No pending attendance records.</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'scheduling' && (
+                <div>
+                    <h2 style={{ borderBottom: '2px solid var(--secondary-color)', paddingBottom: '10px' }}>Schedule Management</h2>
+
+                    {/* Today's Schedules */}
+                    <div style={{ marginTop: '20px', marginBottom: '30px' }}>
+                        <h3>Today's Schedule</h3>
+                        {todaySchedules.length === 0 ? (
+                            <p style={{ color: '#666', padding: '20px', textAlign: 'center' }}>No schedules for today.</p>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '15px' }}>
+                                {todaySchedules.map(schedule => (
+                                    <ScheduleCard
+                                        key={schedule._id}
+                                        schedule={schedule}
+                                        showActions={schedule.status === 'Pending'}
+                                        onApprove={handleApproveSchedule}
+                                        onCancel={handleCancelSchedule}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Calendar View */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>Calendar View</h3>
+                    <SimpleCalendar
+                        schedules={schedules}
+                        onDateClick={(date) => {
+                            setSelectedDate(date);
+                        }}
+                    />
+
+                    {/* Selected Date Schedules */}
+                    {selectedDate && (
+                        <div style={{ marginTop: '30px' }}>
+                            <h3>Schedules for {selectedDate.toLocaleDateString()}</h3>
+                            {schedules.filter(s => {
+                                const scheduleDate = new Date(s.date);
+                                return scheduleDate.toDateString() === selectedDate.toDateString();
+                            }).length === 0 ? (
+                                <p style={{ color: '#666', padding: '20px', textAlign: 'center' }}>No schedules for this date.</p>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px', marginTop: '15px' }}>
+                                    {schedules.filter(s => {
+                                        const scheduleDate = new Date(s.date);
+                                        return scheduleDate.toDateString() === selectedDate.toDateString();
+                                    }).map(schedule => (
+                                        <ScheduleCard
+                                            key={schedule._id}
+                                            schedule={schedule}
+                                            showActions={schedule.status === 'Pending'}
+                                            onApprove={handleApproveSchedule}
+                                            onCancel={handleCancelSchedule}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* All Pending Schedules */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>Pending Schedules</h3>
+                    {schedules.filter(s => s.status === 'Pending').length === 0 ? (
+                        <p style={{ color: '#666', padding: '20px', textAlign: 'center' }}>No pending schedules.</p>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                            {schedules.filter(s => s.status === 'Pending').map(schedule => (
+                                <ScheduleCard
+                                    key={schedule._id}
+                                    schedule={schedule}
+                                    showActions={true}
+                                    onApprove={handleApproveSchedule}
+                                    onCancel={handleCancelSchedule}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );

@@ -3,6 +3,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import { Pie, Bar } from 'react-chartjs-2';
 import api from '../utils/api';
 import Card from '../components/Card';
+import ScheduleCard from '../components/ScheduleCard';
 import { Link } from 'react-router-dom';
 import { FaProjectDiagram, FaRupeeSign, FaUsers, FaClipboardList, FaArrowRight } from 'react-icons/fa';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,6 +13,8 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 const PublicDashboard = () => {
     const [data, setData] = useState({ projects: [], attendance: [] });
     const [loading, setLoading] = useState(true);
+    const [attendancePercentage, setAttendancePercentage] = useState(0);
+    const [schedules, setSchedules] = useState([]);
     const { t } = useLanguage();
 
     useEffect(() => {
@@ -19,6 +22,14 @@ const PublicDashboard = () => {
             try {
                 const res = await api.get('/public/dashboard');
                 setData(res.data);
+
+                // Fetch attendance percentage
+                const attendanceRes = await api.get('/public/attendance/percentage');
+                setAttendancePercentage(attendanceRes.data.percentage);
+
+                // Fetch approved schedules
+                const schedulesRes = await api.get('/public/schedules');
+                setSchedules(schedulesRes.data);
             } catch (err) {
                 console.error('Error fetching public data', err);
             } finally {
@@ -90,7 +101,7 @@ const PublicDashboard = () => {
                 <KPICard title="Total Projects" value={data.projects.length} subtext={`${recentProjects.length} new this month`} icon={FaProjectDiagram} color="#007bff" />
                 <KPICard title="Budget Utilized" value={`₹${(utilizedFunds / 100000).toFixed(1)}L`} subtext={`${utilizationPercentage}% Utilization`} icon={FaRupeeSign} color="#28a745" />
                 <KPICard title="Active MLAs" value={Object.keys(mlaFunds).length} icon={FaUsers} color="#fd7e14" />
-                <KPICard title="Avg Attendance" value="85%" subtext="Last Session" icon={FaClipboardList} color="#6f42c1" />
+                <KPICard title="Avg Attendance" value={`${attendancePercentage}%`} subtext="Verified Records" icon={FaClipboardList} color="#6f42c1" />
             </div>
 
             {/* Quick Links */}
@@ -132,6 +143,18 @@ const PublicDashboard = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Approved Schedules */}
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Approved Schedules</h2>
+            {schedules.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>No approved schedules available.</p>
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+                    {schedules.map(schedule => (
+                        <ScheduleCard key={schedule._id} schedule={schedule} />
+                    ))}
+                </div>
+            )}
 
         </div>
     );

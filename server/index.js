@@ -14,13 +14,13 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-// Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/data', require('./routes/data')); // Existing data routes (projects/admin)
 app.use('/api/landing', require('./routes/landing')); // New Landing Page
 app.use('/api/mla', require('./routes/mla')); // New MLA Directory
 app.use('/api/complaints', require('./routes/complaints')); // New Complaints
 app.use('/api/pa', require('./routes/pa')); // New PA routes
+app.use('/api/admin', require('./routes/admin')); // Admin routes for seasons, attendance, scheduling
 
 
 
