@@ -255,7 +255,7 @@ const AdminDashboard = () => {
                                 <span>Verifications</span>
                             </a>
                         </li>
-                        <li style={{ marginBottom: '8px' }}>
+                        {/* <li style={{ marginBottom: '8px' }}>
                             <a
                                 onClick={() => setActiveTab('cms')}
                                 style={{
@@ -275,7 +275,7 @@ const AdminDashboard = () => {
                                 <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'cms' ? "'FILL' 1" : "'FILL' 0" }}>edit_note</span>
                                 <span>Landing Page CMS</span>
                             </a>
-                        </li>
+                        </li> */}
                         <li style={{ marginBottom: '8px' }}>
                             <a
                                 onClick={() => setActiveTab('complaints')}
@@ -440,7 +440,7 @@ const AdminDashboard = () => {
                     {/* Tab Content */}
                     {activeTab === 'pa_management' && <div><PAManagement /></div>}
 
-                    {activeTab === 'cms' && <div><AdminLandingCMS /></div>}
+                    {/* {activeTab === 'cms' && <div><AdminLandingCMS /></div>} */}
 
                     {activeTab === 'complaints' && (
                         <div>
