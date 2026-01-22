@@ -3,7 +3,7 @@ import { FaStar } from 'react-icons/fa';
 import api from '../utils/api';
 import Button from './Button';
 
-const ProjectRating = ({ projectId, onRate }) => {
+const ProjectRating = ({ projectId, onRate, type = 'projects' }) => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [comment, setComment] = useState('');
@@ -13,7 +13,7 @@ const ProjectRating = ({ projectId, onRate }) => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await api.post(`/projects/${projectId}/rate`, { rating, comment });
+            await api.post(`/data/public/${type}/${projectId}/rate`, { rating, comment });
             if (onRate) onRate();
             alert('Rating submitted successfully!');
             setComment('');

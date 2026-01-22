@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
+const Scheme = require('../models/Scheme');
+const Event = require('../models/Event');
 const Attendance = require('../models/Attendance');
 const Season = require('../models/Season');
 const Schedule = require('../models/Schedule');
@@ -14,12 +16,11 @@ router.get('/public/dashboard', async (req, res) => {
   try {
     console.log('Fetching public dashboard data...');
     const projects = await Project.find({ status: 'approved' }).populate('mla', 'fullName district');
-    // const projects = await Project.find({ });
-   console.log("projects",projects);
-
+    const schemes = await Scheme.find({ status: 'approved' }).populate('pa', 'fullName');
+    const events = await Event.find({ status: 'approved' }).populate('pa', 'fullName');
 
     const attendance = await Attendance.find({ isVerified: true }).populate('mla', 'fullName district');
-    res.json({ projects, attendance });
+    res.json({ projects, schemes, events, attendance });
 
 
   } catch (err) {
@@ -171,6 +172,44 @@ router.get('/public/schedules', async (req, res) => {
       .sort({ date: 1 });
 
     res.json(schedules);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Rate Projects, Schemes, or Events
+router.post('/public/:type/:id/rate', auth(['citizen', 'public', 'admin', 'mla', 'pa']), async (req, res) => {
+  const { type, id } = req.params;
+  const { rating, comment } = req.body;
+
+  try {
+    let Model;
+    if (type === 'projects') Model = Project;
+    else if (type === 'schemes') Model = Scheme;
+    else if (type === 'events') Model = Event;
+    else return res.status(400).json({ message: 'Invalid type' });
+
+    const item = await Model.findById(id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    // Check if user already rated (optional, but good practice)
+    const existingRating = item.ratings.find(r => r.user?.toString() === req.user.id);
+    if (existingRating) {
+      existingRating.rating = rating;
+      existingRating.comment = comment;
+      existingRating.createdAt = Date.now();
+    } else {
+      item.ratings.push({ user: req.user.id, rating, comment });
+    }
+
+    // Recalculate average
+    item.totalRatings = item.ratings.length;
+    item.averageRating = item.ratings.length > 0
+      ? item.ratings.reduce((sum, r) => sum + r.rating, 0) / item.ratings.length
+      : 0;
+
+    await item.save();
+    res.json(item);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

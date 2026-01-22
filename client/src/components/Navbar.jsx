@@ -20,12 +20,16 @@ const Navbar = ({ user, onLogout }) => {
         if (user.role === 'pa') return '/pa';
         return '/user';
     };
+
     const getProfileLink = () => {
         if (!user) return '/login';
         if (user.role === 'admin' || user.role === 'mla') return '/admin/profile';
         if (user.role === 'pa') return '/pa/profile';
-        return '/user/profile';
+        // Pass activeSection as URL parameter for regular users
+        return '/user?section=profile';
     };
+
+
 
     return (
         <nav className="navbar" style={{ background: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', padding: '15px 0' }}>
@@ -43,13 +47,13 @@ const Navbar = ({ user, onLogout }) => {
                     <Link to="/mla-directory" className="nav-link" style={{ color: '#333', fontWeight: '500' }}>{t('MLA Directory', 'എംഎൽഎ ഡയറക്ടറി')}</Link>
 
                     {/* Language Toggle */}
-                    <button
+                    {/* <button
                         className="btn-text"
                         onClick={toggleLanguage}
                         style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#0077b6', fontWeight: '600' }}
                     >
                         <FaGlobe /> {language === 'en' ? 'മലയാളം' : 'English'}
-                    </button>
+                    </button> */}
 
                     {!user ? (
                         <>

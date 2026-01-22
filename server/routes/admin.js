@@ -5,6 +5,9 @@ const Season = require('../models/Season');
 const Attendance = require('../models/Attendance');
 const Schedule = require('../models/Schedule');
 const User = require('../models/User');
+const Project = require('../models/Project');
+const Scheme = require('../models/Scheme');
+const Event = require('../models/Event');
 
 // Middleware to ensure user is Admin
 const ensureAdmin = (req, res, next) => {
@@ -228,6 +231,225 @@ router.put('/schedule/:id/cancel', auth(['admin']), ensureAdmin, async (req, res
         }
 
         res.json(schedule);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ==================== PENDING & VERIFICATION ROUTES ====================
+
+// GET /admin/pending - Get general pending stats and attendance
+router.get('/pending', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const projectsCount = await Project.countDocuments({ status: 'pending' });
+        const schemesCount = await Scheme.countDocuments({ status: 'pending' });
+        const eventsCount = await Event.countDocuments({ status: 'pending' });
+        const attendance = await Attendance.find({ isVerified: false })
+            .populate('season', 'name')
+            .populate('mla', 'fullName')
+            .sort({ date: -1 });
+
+        res.json({
+            stats: {
+                projects: projectsCount,
+                schemes: schemesCount,
+                events: eventsCount,
+                attendance: attendance.length
+            },
+            attendance
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /admin/projects/pending
+router.get('/projects/pending', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const projects = await Project.find({ status: 'pending' }).populate('mla', 'fullName');
+        res.json(projects);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /admin/schemes/pending
+router.get('/schemes/pending', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const schemes = await Scheme.find({ status: 'pending' }).populate('pa', 'fullName');
+        res.json(schemes);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /admin/events/pending
+router.get('/events/pending', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const events = await Event.find({ status: 'pending' }).populate('pa', 'fullName');
+        res.json(events);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /admin/project/:id/verify
+router.put('/project/:id/verify', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const { status, remarks } = req.body;
+        const project = await Project.findByIdAndUpdate(
+            req.params.id,
+            { status, adminRemarks: remarks, verifiedBy: req.user.id, verifiedAt: new Date() },
+            { new: true }
+        );
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.json(project);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /admin/scheme/:id/verify
+router.put('/scheme/:id/verify', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const { status, remarks } = req.body;
+        const scheme = await Scheme.findByIdAndUpdate(
+            req.params.id,
+            { status, remarks: remarks, admin: req.user.id },
+            { new: true }
+        );
+        if (!scheme) return res.status(404).json({ message: 'Scheme not found' });
+        res.json(scheme);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /admin/event/:id/verify
+router.put('/event/:id/verify', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const { status, remarks } = req.body;
+        const event = await Event.findByIdAndUpdate(
+            req.params.id,
+            { status, remarks: remarks, admin: req.user.id },
+            { new: true }
+        );
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+        res.json(event);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /admin/projects - Get ALL projects
+router.get('/projects', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const projects = await Project.find().populate('mla', 'fullName').sort({ createdAt: -1 });
+        res.json(projects);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /admin/schemes - Get ALL schemes
+router.get('/schemes', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const schemes = await Scheme.find().populate('pa', 'fullName').sort({ createdAt: -1 });
+        res.json(schemes);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /admin/events - Get ALL events
+router.get('/events', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const events = await Event.find().populate('pa', 'fullName').sort({ createdAt: -1 });
+        res.json(events);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ==================== MANAGEMENT (CRUD) ROUTES ====================
+
+// PUT /admin/project/:id - Edit project
+router.put('/project/:id', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.json(project);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE /admin/project/:id
+router.delete('/project/:id', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const project = await Project.findByIdAndDelete(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.json({ message: 'Project deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /admin/scheme/:id - Edit scheme
+router.put('/scheme/:id', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const scheme = await Scheme.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!scheme) return res.status(404).json({ message: 'Scheme not found' });
+        res.json(scheme);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE /admin/scheme/:id
+router.delete('/scheme/:id', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const scheme = await Scheme.findByIdAndDelete(req.params.id);
+        if (!scheme) return res.status(404).json({ message: 'Scheme not found' });
+        res.json({ message: 'Scheme deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /admin/event/:id - Edit event
+router.put('/event/:id', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+        res.json(event);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE /admin/event/:id
+router.delete('/event/:id', auth(['admin']), ensureAdmin, async (req, res) => {
+    try {
+        const event = await Event.findByIdAndDelete(req.params.id);
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+        res.json({ message: 'Event deleted successfully' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });

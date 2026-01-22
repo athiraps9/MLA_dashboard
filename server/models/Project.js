@@ -13,6 +13,9 @@ const ProjectSchema = new mongoose.Schema({
     type: { type: String, enum: ['image', 'video'] },
     url: { type: String }
   }],
+  startDate: { type: Date },
+  endDate: { type: Date },
+  supportingDocument: { type: String }, // URL or file path
   ratings: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     rating: { type: Number, min: 1, max: 5, required: true },

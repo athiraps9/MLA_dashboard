@@ -14,7 +14,13 @@ const LandingPage = () => {
     const observerRef = useRef(null);
 
     useEffect(() => {
-        // Fetch landing data if needed, or static for now
+        const fetchLandingData = async () => {
+            try {
+                const res = await api.get('/landing');
+                setData(res.data);
+            } catch (err) { console.error(err); }
+        };
+        fetchLandingData();
     }, []);
 
     const styles = {
@@ -118,15 +124,15 @@ const LandingPage = () => {
             {/* Stats Overlay */}
             <div className="container" style={styles.statsRow}>
                 <div style={styles.statCard}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>98%</h2>
+                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>{data?.stats?.averageAttendance || 0}%</h2>
                     <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Attendance</p>
                 </div>
                 <div style={styles.statCard}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>₹12Cr+</h2>
+                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>₹{(data?.stats?.totalUtilized / 10000000).toFixed(1)}Cr+</h2>
                     <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Funds Utilized</p>
                 </div>
                 <div style={styles.statCard}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>150+</h2>
+                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>{data?.stats?.totalProjects || 0}+</h2>
                     <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Projects Completed</p>
                 </div>
             </div>

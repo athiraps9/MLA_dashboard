@@ -31,6 +31,15 @@ const PADashboard = () => {
 
     // Project State
     const [projects, setProjects] = useState([]);
+    const [projectForm, setProjectForm] = useState({ title: '', description: '', fundsAllocated: '', startDate: '', endDate: '', mlaId: '' });
+
+    // Schemes State
+    const [schemes, setSchemes] = useState([]);
+    const [schemeForm, setSchemeForm] = useState({ date: '', time: '', location: '', category: '', description: '' });
+
+    // Events State
+    const [events, setEvents] = useState([]);
+    const [eventForm, setEventForm] = useState({ date: '', time: '', location: '', category: '', description: '' });
 
     // Complaints State
     const [complaints, setComplaints] = useState([]);
@@ -107,6 +116,20 @@ const PADashboard = () => {
         } catch (err) { console.error(err); }
     };
 
+    const fetchSchemes = async () => {
+        try {
+            const res = await api.get('/pa/schemes');
+            setSchemes(res.data);
+        } catch (err) { console.error(err); }
+    };
+
+    const fetchEvents = async () => {
+        try {
+            const res = await api.get('/pa/events');
+            setEvents(res.data);
+        } catch (err) { console.error(err); }
+    };
+
     // Tab Handler
     const handleTabChange = (tab) => {
         setActiveTab(tab);
@@ -121,6 +144,8 @@ const PADashboard = () => {
         }
         if (tab === 'projects') fetchProjects();
         if (tab === 'complaints') fetchComplaints();
+        if (tab === 'schemes') fetchSchemes();
+        if (tab === 'events') fetchEvents();
     };
 
     // Fetch Seasons
@@ -232,6 +257,42 @@ const PADashboard = () => {
         } catch (err) { alert('Failed'); }
     };
 
+    const handleProjectSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const mlaRes = await api.get('/pa/admins'); // Reusing to find a user, or wait, mla-directory?
+            // Actually let's assume the user knows the MLA ID or we fetch it.
+            // For now, let's use a simpler approach or fetch from directory
+            const mlaRes2 = await api.get('/mla-directory');
+            const mlaId = projectForm.mlaId || mlaRes2.data[0]?._id;
+
+            await api.post('/pa/project', { ...projectForm, mlaId });
+            alert('Project created!');
+            setProjectForm({ title: '', description: '', fundsAllocated: '', startDate: '', endDate: '', mlaId: '' });
+            fetchProjects();
+        } catch (err) { alert('Failed to create project'); }
+    };
+
+    const handleSchemeSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/pa/scheme', schemeForm);
+            alert('Scheme submitted for verification!');
+            setSchemeForm({ date: '', time: '', location: '', category: '', description: '' });
+            fetchSchemes();
+        } catch (err) { alert('Failed to submit scheme'); }
+    };
+
+    const handleEventSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/pa/event', eventForm);
+            alert('Event submitted for verification!');
+            setEventForm({ date: '', time: '', location: '', category: '', description: '' });
+            fetchEvents();
+        } catch (err) { alert('Failed to submit event'); }
+    };
+
     const handleComplaintUpdate = async (id, status, response) => {
         try {
             await api.put(`/pa/complaint/${id}`, { status, paResponse: response });
@@ -338,7 +399,7 @@ const PADashboard = () => {
             <h1>PA Dashboard</h1>
 
             <div style={styles.nav}>
-                {['dashboard', 'attendance', 'scheduling', 'projects', 'complaints', 'profile'].map(tab => (
+                {['dashboard', 'attendance', 'scheduling', 'projects', 'schemes', 'events', 'complaints', 'profile'].map(tab => (
                     <div key={tab} style={styles.navItem(activeTab === tab)} onClick={() => handleTabChange(tab)}>
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </div>
@@ -350,6 +411,8 @@ const PADashboard = () => {
                     <div style={styles.statCard}><h3>Attendance Records</h3><p>{stats.attendanceRecords}</p></div>
                     <div style={styles.statCard}><h3>Pending Verification</h3><p>{stats.pendingVerification}</p></div>
                     <div style={styles.statCard}><h3>Projects Active</h3><p>{stats.projectsUpdated}</p></div>
+                    <div style={styles.statCard}><h3>Total Schemes</h3><p>{stats.totalSchemes || 0}</p></div>
+                    <div style={styles.statCard}><h3>Total Events</h3><p>{stats.totalEvents || 0}</p></div>
                 </div>
             )}
 
@@ -551,15 +614,173 @@ const PADashboard = () => {
 
             {
                 activeTab === 'projects' && (
-                    <div>
-                        <h3>Project Updates</h3>
-                        {projects.map(p => (
-                            <Card key={p._id} title={p.title}>
-                                <p>Status: {p.status}</p>
-                                <Button onClick={() => handleProjectUpdate(p._id, 'in-progress')}>Mark In Progress</Button>
-                                <Button onClick={() => handleProjectUpdate(p._id, 'completed')}>Mark Completed</Button>
-                            </Card>
-                        ))}
+                    <div style={{ display: 'grid', gap: '2rem' }}>
+                        <Card title="Create New Project">
+                            <form onSubmit={handleProjectSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Title</label>
+                                    <input style={styles.input} value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description</label>
+                                    <textarea style={styles.input} value={projectForm.description} onChange={e => setProjectForm({ ...projectForm, description: e.target.value })} required />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Start Date</label>
+                                        <input type="date" style={styles.input} value={projectForm.startDate} onChange={e => setProjectForm({ ...projectForm, startDate: e.target.value })} required />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>End Date</label>
+                                        <input type="date" style={styles.input} value={projectForm.endDate} onChange={e => setProjectForm({ ...projectForm, endDate: e.target.value })} required />
+                                    </div>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Budget Allocation</label>
+                                    <input type="number" style={styles.input} value={projectForm.fundsAllocated} onChange={e => setProjectForm({ ...projectForm, fundsAllocated: e.target.value })} required />
+                                </div>
+                                <Button type="submit">Create Project</Button>
+                            </form>
+                        </Card>
+
+                        <div>
+                            <h3>Project Status Management</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {projects.map(p => (
+                                    <Card key={p._id} title={p.title}>
+                                        <div style={{ marginBottom: '1rem' }}>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.8rem',
+                                                background: p.status === 'approved' ? '#C6F6D5' : p.status === 'pending' ? '#FEEBC8' : '#FED7D7',
+                                                color: p.status === 'approved' ? '#22543D' : p.status === 'pending' ? '#744210' : '#822727'
+                                            }}>
+                                                {p.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <Button variant="outline" size="small" onClick={() => handleProjectUpdate(p._id, 'in-progress')}>Mark In Progress</Button>
+                                            <Button variant="outline" size="small" onClick={() => handleProjectUpdate(p._id, 'completed')}>Mark Completed</Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {
+                activeTab === 'schemes' && (
+                    <div style={{ display: 'grid', gap: '2rem' }}>
+                        <Card title="Submit New Scheme">
+                            <form onSubmit={handleSchemeSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Date</label>
+                                        <input type="date" style={styles.input} value={schemeForm.date} onChange={e => setSchemeForm({ ...schemeForm, date: e.target.value })} required />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Time</label>
+                                        <input type="time" style={styles.input} value={schemeForm.time} onChange={e => setSchemeForm({ ...schemeForm, time: e.target.value })} required />
+                                    </div>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Location</label>
+                                    <input style={styles.input} value={schemeForm.location} onChange={e => setSchemeForm({ ...schemeForm, location: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Category</label>
+                                    <input style={styles.input} value={schemeForm.category} onChange={e => setSchemeForm({ ...schemeForm, category: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description</label>
+                                    <textarea style={styles.input} value={schemeForm.description} onChange={e => setSchemeForm({ ...schemeForm, description: e.target.value })} required />
+                                </div>
+                                <Button type="submit">Submit Scheme</Button>
+                            </form>
+                        </Card>
+
+                        <div>
+                            <h3>Submitted Schemes</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {schemes.map(s => (
+                                    <Card key={s._id} title={s.category}>
+                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(s.date).toLocaleDateString()} | {s.time} | {s.location}</p>
+                                        <p>{s.description}</p>
+                                        <div>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.8rem',
+                                                background: s.status === 'approved' ? '#C6F6D5' : s.status === 'pending' ? '#FEEBC8' : '#FED7D7',
+                                                color: s.status === 'approved' ? '#22543D' : s.status === 'pending' ? '#744210' : '#822727'
+                                            }}>
+                                                {s.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {
+                activeTab === 'events' && (
+                    <div style={{ display: 'grid', gap: '2rem' }}>
+                        <Card title="Submit New Event">
+                            <form onSubmit={handleEventSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Date</label>
+                                        <input type="date" style={styles.input} value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} required />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Time</label>
+                                        <input type="time" style={styles.input} value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} required />
+                                    </div>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Location</label>
+                                    <input style={styles.input} value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Category</label>
+                                    <input style={styles.input} value={eventForm.category} onChange={e => setEventForm({ ...eventForm, category: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description</label>
+                                    <textarea style={styles.input} value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} required />
+                                </div>
+                                <Button type="submit">Submit Event</Button>
+                            </form>
+                        </Card>
+
+                        <div>
+                            <h3>Submitted Events</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {events.map(ev => (
+                                    <Card key={ev._id} title={ev.category}>
+                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(ev.date).toLocaleDateString()} | {ev.time} | {ev.location}</p>
+                                        <p>{ev.description}</p>
+                                        <div>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.8rem',
+                                                background: ev.status === 'approved' ? '#C6F6D5' : ev.status === 'pending' ? '#FEEBC8' : '#FED7D7',
+                                                color: ev.status === 'approved' ? '#22543D' : ev.status === 'pending' ? '#744210' : '#822727'
+                                            }}>
+                                                {ev.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )
             }

@@ -15,18 +15,23 @@ import ProjectRating from '../components/ProjectRating';
 import AvatarUpload from '../components/AvatarUpload';
 import { SERVER_URL } from '../utils/api';
 import { KERALA_CONSTITUENCIES } from '../utils/constituencies';
+import { useLocation } from 'react-router-dom';
 
 const UserDashboard = () => {
     const [activeSection, setActiveSection] = useState('dashboard');
     const [user, setUser] = useState({});
     const [myComplaints, setMyComplaints] = useState([]);
     const [projects, setProjects] = useState([]); // All approved projects
+    const [schemes, setSchemes] = useState([]); // All approved schemes
+    const [events, setEvents] = useState([]); // All approved events
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const location = useLocation();
 
     // Complaint Form
     const [complaintForm, setComplaintForm] = useState({ title: '', description: '' });
+
 
     // Profile State
     const [previewUrl, setPreviewUrl] = useState('');
@@ -47,6 +52,20 @@ const UserDashboard = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const section = params.get('section');
+
+        if (section) {
+            setActiveSection(section);
+        }
+    }, [location]);
+
+    useEffect(() => {
+
+
+
+
+
         const u = JSON.parse(localStorage.getItem('user'));
         if (u) {
             setUser(u);
@@ -66,7 +85,7 @@ const UserDashboard = () => {
             setSearchConstituency(u.constituency || '');
         }
         fetchUserData();
-        fetchProjects();
+        fetchData();
     }, []);
 
     const fetchUserData = async () => {
@@ -78,10 +97,12 @@ const UserDashboard = () => {
         }
     };
 
-    const fetchProjects = async () => {
+    const fetchData = async () => {
         try {
-            const res = await api.get('/data/public/dashboard'); // Helper to get projects
+            const res = await api.get('/data/public/dashboard');
             setProjects(res.data.projects);
+            setSchemes(res.data.schemes || []);
+            setEvents(res.data.events || []);
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
@@ -329,6 +350,8 @@ const UserDashboard = () => {
                 </div>
                 <div style={styles.menuItem(activeSection === 'dashboard')} onClick={() => setActiveSection('dashboard')}>Dashboard</div>
                 <div style={styles.menuItem(activeSection === 'projects')} onClick={() => setActiveSection('projects')}>Active Projects</div>
+                <div style={styles.menuItem(activeSection === 'schemes')} onClick={() => setActiveSection('schemes')}>Active Schemes</div>
+                <div style={styles.menuItem(activeSection === 'events')} onClick={() => setActiveSection('events')}>Active Events</div>
                 <div style={styles.menuItem(activeSection === 'complaints')} onClick={() => setActiveSection('complaints')}>My Complaints</div>
                 <div style={styles.menuItem(activeSection === 'profile')} onClick={() => setActiveSection('profile')}>Profile</div>
             </div>
@@ -369,12 +392,76 @@ const UserDashboard = () => {
                                         <p><strong>Status:</strong> {p.status}</p>
                                         <p><strong>Invested:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
 
-                                        <ProjectRating projectId={p._id} onRate={fetchProjects} />
+                                        <ProjectRating projectId={p._id} onRate={fetchData} type="projects" />
 
                                         {p.ratings && p.ratings.length > 0 && (
                                             <div style={{ marginTop: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
                                                 <h5>Community Reviews ({p.ratings.length})</h5>
                                                 {p.ratings.slice(0, 3).map((r, i) => (
+                                                    <div key={i} style={{ borderBottom: '1px solid #eee', padding: '5px 0', fontSize: '0.9rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                            <FaStar color="#ffc107" size={12} /> {r.rating}
+                                                            <span style={{ color: '#aaa', fontSize: '0.8rem' }}> - {new Date(r.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                        {r.comment && <p style={{ margin: '5px 0 0' }}>"{r.comment}"</p>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Card>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {activeSection === 'schemes' && (
+                        <>
+                            <h2>Government Schemes</h2>
+                            <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
+                                {schemes.length === 0 ? <p>No active schemes at the moment.</p> : schemes.map(s => (
+                                    <Card key={s._id} title={s.category}>
+                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(s.date).toLocaleDateString()} | {s.time} | {s.location}</p>
+                                        <p>{s.description}</p>
+                                        <p style={{ fontSize: '0.8rem', color: '#999' }}>Verified by Authority</p>
+
+                                        <ProjectRating projectId={s._id} onRate={fetchData} type="schemes" />
+
+                                        {s.ratings && s.ratings.length > 0 && (
+                                            <div style={{ marginTop: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
+                                                <h5>Community Reviews ({s.ratings.length})</h5>
+                                                {s.ratings.slice(0, 3).map((r, i) => (
+                                                    <div key={i} style={{ borderBottom: '1px solid #eee', padding: '5px 0', fontSize: '0.9rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                            <FaStar color="#ffc107" size={12} /> {r.rating}
+                                                            <span style={{ color: '#aaa', fontSize: '0.8rem' }}> - {new Date(r.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                        {r.comment && <p style={{ margin: '5px 0 0' }}>"{r.comment}"</p>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Card>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {activeSection === 'events' && (
+                        <>
+                            <h2>Upcoming Events</h2>
+                            <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
+                                {events.length === 0 ? <p>No upcoming events at the moment.</p> : events.map(ev => (
+                                    <Card key={ev._id} title={ev.category}>
+                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(ev.date).toLocaleDateString()} | {ev.time} | {ev.location}</p>
+                                        <p>{ev.description}</p>
+                                        <p style={{ fontSize: '0.8rem', color: '#999' }}>Verified by Authority</p>
+
+                                        <ProjectRating projectId={ev._id} onRate={fetchData} type="events" />
+
+                                        {ev.ratings && ev.ratings.length > 0 && (
+                                            <div style={{ marginTop: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
+                                                <h5>Community Reviews ({ev.ratings.length})</h5>
+                                                {ev.ratings.slice(0, 3).map((r, i) => (
                                                     <div key={i} style={{ borderBottom: '1px solid #eee', padding: '5px 0', fontSize: '0.9rem' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                                             <FaStar color="#ffc107" size={12} /> {r.rating}

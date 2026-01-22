@@ -5,6 +5,8 @@ const Attendance = require('../models/Attendance');
 const Season = require('../models/Season');
 const Schedule = require('../models/Schedule');
 const Project = require('../models/Project');
+const Scheme = require('../models/Scheme');
+const Event = require('../models/Event');
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
 
@@ -22,12 +24,16 @@ router.get('/dashboard', async (req, res) => {
         const attendanceRecords = await Attendance.countDocuments();
         const pendingVerification = await Attendance.countDocuments({ isVerified: false });
         const projectsUpdated = await Project.countDocuments({ status: { $in: ['in-progress', 'completed'] } }); 
+        const totalSchemes = await Scheme.countDocuments();
+        const totalEvents = await Event.countDocuments();
         
         res.json({
             daysEntered: attendanceRecords, 
             attendanceRecords,
             pendingVerification,
-            projectsUpdated
+            projectsUpdated,
+            totalSchemes,
+            totalEvents
         });
     } catch (err) {
         console.error(err);
@@ -38,7 +44,7 @@ router.get('/dashboard', async (req, res) => {
 // ATTENDANCE ROUTES
 
 // POST /pa/attendance - Add daily attendance
-router.post('/attendance', auth, ensurePA, async (req, res) => {
+router.post('/attendance', auth(), ensurePA, async (req, res) => {
     const { seasonId, date, status, remarks, mlaId } = req.body;
     
     try {
@@ -82,7 +88,7 @@ router.post('/attendance', auth, ensurePA, async (req, res) => {
 });
 
 // GET /pa/attendance/pending
-router.get('/attendance/pending', auth, ensurePA, async (req, res) => {
+router.get('/attendance/pending', auth(), ensurePA, async (req, res) => {
     try {
         const pendingAttendance = await Attendance.find({ isVerified: false })
             .populate('season', 'name')
@@ -100,7 +106,7 @@ router.get('/attendance/pending', auth, ensurePA, async (req, res) => {
 // PROJECT ROUTES
 
 // GET /pa/projects - Get all projects for management
-router.get('/projects', auth, ensurePA, async (req, res) => {
+router.get('/projects', auth(), ensurePA, async (req, res) => {
     try {
         const projects = await Project.find().populate('mla', 'fullName');
         res.json(projects);
@@ -110,8 +116,29 @@ router.get('/projects', auth, ensurePA, async (req, res) => {
     }
 });
 
+// POST /pa/project - Create a new project
+router.post('/project', auth(), ensurePA, async (req, res) => {
+    try {
+        const { title, description, fundsAllocated, startDate, endDate, mlaId } = req.body;
+        const project = new Project({
+            title,
+            description,
+            fundsAllocated,
+            startDate,
+            endDate,
+            mla: mlaId,
+            status: 'pending'
+        });
+        await project.save();
+        res.json(project);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // PUT /pa/project/:id - Update project status/details
-router.put('/project/:id', auth, ensurePA, async (req, res) => {
+router.put('/project/:id', auth(), ensurePA, async (req, res) => {
     try {
         const project = await Project.findByIdAndUpdate(
             req.params.id, 
@@ -128,7 +155,7 @@ router.put('/project/:id', auth, ensurePA, async (req, res) => {
 // COMPLAINT ROUTES
 
 // GET /pa/complaints - Get assigned complaints or all complaints
-router.get('/complaints', auth, ensurePA, async (req, res) => {
+router.get('/complaints', auth(), ensurePA, async (req, res) => {
     try {
         // PAs can see all complaints to pick them up or assigned ones
         const complaints = await Complaint.find().populate('user', 'fullName email').sort({ createdAt: -1 });
@@ -140,7 +167,7 @@ router.get('/complaints', auth, ensurePA, async (req, res) => {
 });
 
 // PUT /pa/complaint/:id - Update complaint
-router.put('/complaint/:id', auth, ensurePA, async (req, res) => {
+router.put('/complaint/:id', auth(), ensurePA, async (req, res) => {
     const { status, paResponse, priority } = req.body;
     try {
         const updateFields = {};
@@ -163,10 +190,110 @@ router.put('/complaint/:id', auth, ensurePA, async (req, res) => {
     }
 });
 
+// SCHEME ROUTES
+
+// GET /pa/schemes
+router.get('/schemes', auth(), ensurePA, async (req, res) => {
+    try {
+        const schemes = await Scheme.find({ pa: req.user.id }).sort({ createdAt: -1 });
+        res.json(schemes);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// POST /pa/scheme
+router.post('/scheme', auth(), ensurePA, async (req, res) => {
+    try {
+        const { date, time, location, category, description } = req.body;
+        const scheme = new Scheme({
+            date,
+            time,
+            location,
+            category,
+            description,
+            pa: req.user.id,
+            status: 'pending'
+        });
+        await scheme.save();
+        res.json(scheme);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /pa/scheme/:id
+router.put('/scheme/:id', auth(), ensurePA, async (req, res) => {
+    try {
+        const scheme = await Scheme.findOneAndUpdate(
+            { _id: req.params.id, pa: req.user.id, status: 'pending' },
+            { $set: req.body },
+            { new: true }
+        );
+        if (!scheme) return res.status(404).json({ message: 'Scheme not found or cannot be edited' });
+        res.json(scheme);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// EVENT ROUTES
+
+// GET /pa/events
+router.get('/events', auth(), ensurePA, async (req, res) => {
+    try {
+        const events = await Event.find({ pa: req.user.id }).sort({ createdAt: -1 });
+        res.json(events);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// POST /pa/event
+router.post('/event', auth(), ensurePA, async (req, res) => {
+    try {
+        const { date, time, location, category, description } = req.body;
+        const event = new Event({
+            date,
+            time,
+            location,
+            category,
+            description,
+            pa: req.user.id,
+            status: 'pending'
+        });
+        await event.save();
+        res.json(event);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /pa/event/:id
+router.put('/event/:id', auth(), ensurePA, async (req, res) => {
+    try {
+        const event = await Event.findOneAndUpdate(
+            { _id: req.params.id, pa: req.user.id, status: 'pending' },
+            { $set: req.body },
+            { new: true }
+        );
+        if (!event) return res.status(404).json({ message: 'Event not found or cannot be edited' });
+        res.json(event);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // ==================== SCHEDULING ROUTES ====================
 
 // GET /pa/seasons - Get all active seasons
-router.get('/seasons', auth, ensurePA, async (req, res) => {
+router.get('/seasons', auth(), ensurePA, async (req, res) => {
     try {
         const seasons = await Season.find({ isActive: true }).sort({ startDate: -1 });
         res.json(seasons);

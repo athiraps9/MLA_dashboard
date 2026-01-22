@@ -8,12 +8,13 @@ import ScheduleCard from '../components/ScheduleCard';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { FaPlus } from 'react-icons/fa';
+import api from '../utils/api';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [activeTab, setActiveTab] = useState('verification');
-    const [pending, setPending] = useState({ projects: [], attendance: [], complaints: [] });
+    const [pending, setPending] = useState({ projects: [], attendance: [], complaints: [], schemes: [], events: [] });
     const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(null);
     const [editData, setEditData] = useState({});
@@ -28,14 +29,9 @@ const AdminDashboard = () => {
     const [schedules, setSchedules] = useState([]);
     const [todaySchedules, setTodaySchedules] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
+    const [allContent, setAllContent] = useState({ projects: [], schemes: [], events: [] });
 
-    // Mock API calls - replace with your actual API
-    const api = {
-        get: async (url) => ({ data: url.includes('pending') ? { projects: [], attendance: [] } : [] }),
-        put: async () => ({}),
-        delete: async () => ({}),
-        post: async () => ({})
-    };
+    // State for pending items
 
     useEffect(() => {
         fetchPending();
@@ -44,8 +40,17 @@ const AdminDashboard = () => {
     const fetchPending = async () => {
         try {
             const res = await api.get('/admin/pending');
+            const projectsRes = await api.get('/admin/projects/pending');
+            const schemesRes = await api.get('/admin/schemes/pending');
+            const eventsRes = await api.get('/admin/events/pending');
             const pendingComplaints = await api.get('/complaints/all');
-            setPending({ ...res.data, complaints: pendingComplaints.data });
+            setPending({
+                projects: projectsRes.data,
+                attendance: res.data.attendance,
+                schemes: schemesRes.data,
+                events: eventsRes.data,
+                complaints: pendingComplaints.data
+            });
         } catch (err) {
             console.error(err);
         } finally {
@@ -53,12 +58,28 @@ const AdminDashboard = () => {
         }
     };
 
+    const fetchManagementData = async () => {
+        try {
+            const projectsRes = await api.get('/admin/projects');
+            const schemesRes = await api.get('/admin/schemes');
+            const eventsRes = await api.get('/admin/events');
+            setAllContent({
+                projects: projectsRes.data,
+                schemes: schemesRes.data,
+                events: eventsRes.data
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const handleProjectAction = async (id, status) => {
         try {
             const remarks = prompt("Enter remarks (optional):", status === 'approved' ? 'Verified by Admin' : 'Rejected');
             if (remarks === null) return;
-            await api.put(`/admin/project/${id}`, { status, remarks });
+            await api.put(`/admin/project/${id}/verify`, { status, remarks });
             fetchPending();
+            fetchManagementData();
         } catch (err) {
             console.error(err);
             alert('Action failed');
@@ -70,6 +91,7 @@ const AdminDashboard = () => {
         try {
             await api.delete(`/admin/project/${id}`);
             fetchPending();
+            fetchManagementData();
         } catch (err) {
             console.error(err);
             alert('Delete failed');
@@ -87,6 +109,76 @@ const AdminDashboard = () => {
             setEditMode(null);
             fetchPending();
         } catch (err) {
+            alert('Update failed');
+        }
+    };
+
+    const handleSchemeAction = async (id, status) => {
+        try {
+            const remarks = prompt("Enter remarks (optional):", status === 'approved' ? 'Verified' : 'Rejected');
+            if (remarks === null) return;
+            await api.put(`/admin/scheme/${id}/verify`, { status, remarks });
+            fetchPending();
+            fetchManagementData();
+        } catch (err) {
+            console.error(err);
+            alert('Action failed');
+        }
+    };
+
+    const handleEventAction = async (id, status) => {
+        try {
+            const remarks = prompt("Enter remarks (optional):", status === 'approved' ? 'Verified' : 'Rejected');
+            if (remarks === null) return;
+            await api.put(`/admin/event/${id}/verify`, { status, remarks });
+            fetchPending();
+            fetchManagementData();
+        } catch (err) {
+            console.error(err);
+            alert('Action failed');
+        }
+    };
+
+    const handleDeleteScheme = async (id) => {
+        if (!window.confirm("Are you sure you want to PERMANENTLY DELETE this scheme?")) return;
+        try {
+            await api.delete(`/admin/scheme/${id}`);
+            fetchPending();
+            fetchManagementData();
+        } catch (err) {
+            console.error(err);
+            alert('Delete failed');
+        }
+    };
+
+    const handleDeleteEvent = async (id) => {
+        if (!window.confirm("Are you sure you want to PERMANENTLY DELETE this event?")) return;
+        try {
+            await api.delete(`/admin/event/${id}`);
+            fetchPending();
+            fetchManagementData();
+        } catch (err) {
+            console.error(err);
+            alert('Delete failed');
+        }
+    };
+
+    const startEditItem = (item, type) => {
+        setEditMode({ id: item._id, type });
+        setEditData({ ...item });
+    };
+
+    const saveEditItem = async () => {
+        try {
+            const { id, type } = editMode;
+            await api.put(`/admin/${type}/${id}`, editData);
+            setEditMode(null);
+            setEditData({});
+            fetchPending();
+            fetchManagementData();
+            alert('Update successful');
+        } catch (err) {
+            console.error(err);
             alert('Update failed');
         }
     };
@@ -216,6 +308,7 @@ const AdminDashboard = () => {
             case 'cms': return 'Landing Page CMS';
             case 'complaints': return 'Complaints';
             case 'pa_management': return 'PA Management';
+            case 'content_management': return 'Content Management';
             case 'attendance': return 'Attendance Management';
             case 'scheduling': return 'Schedule Management';
             default: return 'Dashboard';
@@ -316,6 +409,30 @@ const AdminDashboard = () => {
                             >
                                 <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'pa_management' ? "'FILL' 1" : "'FILL' 0" }}>manage_accounts</span>
                                 <span>PA Management</span>
+                            </a>
+                        </li>
+                        <li style={{ marginBottom: '8px' }}>
+                            <a
+                                onClick={() => {
+                                    setActiveTab('content_management');
+                                    fetchManagementData();
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px 16px',
+                                    color: activeTab === 'content_management' ? '#6366F1' : '#64748B',
+                                    backgroundColor: activeTab === 'content_management' ? '#EEF2FF' : 'transparent',
+                                    textDecoration: 'none',
+                                    borderRadius: '12px',
+                                    fontWeight: activeTab === 'content_management' ? 700 : 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'content_management' ? "'FILL' 1" : "'FILL' 0" }}>inventory_2</span>
+                                <span>Manage Content</span>
                             </a>
                         </li>
                         <li style={{ marginBottom: '8px' }}>
@@ -475,7 +592,53 @@ const AdminDashboard = () => {
                                             <h3>{p.title}</h3>
                                             <p><strong>MLA:</strong> {p.mla?.fullName}</p>
                                             <p><strong>Desc:</strong> {p.description}</p>
-                                            <p><strong>Funds:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
+                                            <p><strong>Budget:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
+                                            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                                <button onClick={() => handleProjectAction(p._id, 'approved')} style={{ padding: '8px 16px', backgroundColor: '#22C55E', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
+                                                <button onClick={() => handleProjectAction(p._id, 'rejected')} style={{ padding: '8px 16px', backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
+                                                <button onClick={() => startEditItem(p, 'project')} style={{ padding: '8px 16px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                                <button onClick={() => handleDeleteProject(p._id)} style={{ padding: '8px 16px', backgroundColor: '#475569', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <h2 style={{ fontSize: '20px', fontWeight: 700, marginTop: '40px', marginBottom: '20px' }}>Pending Schemes</h2>
+                            {pending.schemes.length === 0 ? <p>No pending schemes.</p> : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '20px' }}>
+                                    {pending.schemes.map(s => (
+                                        <div key={s._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                            <h3>{s.category}</h3>
+                                            <p><strong>PA:</strong> {s.pa?.fullName}</p>
+                                            <p><strong>Desc:</strong> {s.description}</p>
+                                            <p><strong>Location:</strong> {s.location}</p>
+                                            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                                <button onClick={() => handleSchemeAction(s._id, 'approved')} style={{ padding: '8px 16px', backgroundColor: '#22C55E', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
+                                                <button onClick={() => handleSchemeAction(s._id, 'rejected')} style={{ padding: '8px 16px', backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
+                                                <button onClick={() => startEditItem(s, 'scheme')} style={{ padding: '8px 16px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                                <button onClick={() => handleDeleteScheme(s._id)} style={{ padding: '8px 16px', backgroundColor: '#475569', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <h2 style={{ fontSize: '20px', fontWeight: 700, marginTop: '40px', marginBottom: '20px' }}>Pending Events</h2>
+                            {pending.events.length === 0 ? <p>No pending events.</p> : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '20px' }}>
+                                    {pending.events.map(ev => (
+                                        <div key={ev._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                            <h3>{ev.category}</h3>
+                                            <p><strong>PA:</strong> {ev.pa?.fullName}</p>
+                                            <p><strong>Desc:</strong> {ev.description}</p>
+                                            <p><strong>Location:</strong> {ev.location}</p>
+                                            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                                <button onClick={() => handleEventAction(ev._id, 'approved')} style={{ padding: '8px 16px', backgroundColor: '#22C55E', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
+                                                <button onClick={() => handleEventAction(ev._id, 'rejected')} style={{ padding: '8px 16px', backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
+                                                <button onClick={() => startEditItem(ev, 'event')} style={{ padding: '8px 16px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                                <button onClick={() => handleDeleteEvent(ev._id)} style={{ padding: '8px 16px', backgroundColor: '#475569', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -708,11 +871,95 @@ const AdminDashboard = () => {
                             )}
                         </div>
                     )}
+                    {activeTab === 'content_management' && (
+                        <div>
+                            <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Projects</h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                                {allContent.projects.map(p => (
+                                    <div key={p._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>{p.title}</h3>
+                                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, backgroundColor: p.status === 'approved' ? '#DCFCE7' : p.status === 'pending' ? '#FEF9C3' : '#FEE2E2', color: p.status === 'approved' ? '#166534' : p.status === 'pending' ? '#854D0E' : '#991B1B' }}>
+                                                {p.status}
+                                            </span>
+                                        </div>
+                                        <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>{p.description}</p>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => startEditItem(p, 'project')} style={{ flex: 1, padding: '10px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                            <button onClick={() => handleDeleteProject(p._id)} style={{ flex: 1, padding: '10px', backgroundColor: '#F1F5F9', color: '#EF4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Schemes</h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                                {allContent.schemes.map(s => (
+                                    <div key={s._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>{s.category}</h3>
+                                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, backgroundColor: s.status === 'approved' ? '#DCFCE7' : s.status === 'pending' ? '#FEF9C3' : '#FEE2E2', color: s.status === 'approved' ? '#166534' : s.status === 'pending' ? '#854D0E' : '#991B1B' }}>
+                                                {s.status}
+                                            </span>
+                                        </div>
+                                        <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>{s.description}</p>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => startEditItem(s, 'scheme')} style={{ flex: 1, padding: '10px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                            <button onClick={() => handleDeleteScheme(s._id)} style={{ flex: 1, padding: '10px', backgroundColor: '#F1F5F9', color: '#EF4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Events</h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                                {allContent.events.map(ev => (
+                                    <div key={ev._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>{ev.category}</h3>
+                                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, backgroundColor: ev.status === 'approved' ? '#DCFCE7' : ev.status === 'pending' ? '#FEF9C3' : '#FEE2E2', color: ev.status === 'approved' ? '#166534' : ev.status === 'pending' ? '#854D0E' : '#991B1B' }}>
+                                                {ev.status}
+                                            </span>
+                                        </div>
+                                        <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>{ev.description}</p>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => startEditItem(ev, 'event')} style={{ flex: 1, padding: '10px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                            <button onClick={() => handleDeleteEvent(ev._id)} style={{ flex: 1, padding: '10px', backgroundColor: '#F1F5F9', color: '#EF4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Delete</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
 
 
                 </div>
             </main>
+            {editMode && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '500px', maxWidth: '90%' }}>
+                        <h2>Edit {editMode.type}</h2>
+                        {editMode.type === 'project' ? (
+                            <div style={{ display: 'grid', gap: '15px' }}>
+                                <input style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} value={editData.title} onChange={e => setEditData({ ...editData, title: e.target.value })} placeholder="Title" />
+                                <textarea style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} value={editData.description} onChange={e => setEditData({ ...editData, description: e.target.value })} placeholder="Description" rows="4" />
+                                <input style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} type="number" value={editData.fundsAllocated} onChange={e => setEditData({ ...editData, fundsAllocated: e.target.value })} placeholder="Budget" />
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gap: '15px' }}>
+                                <input style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} value={editData.category} onChange={e => setEditData({ ...editData, category: e.target.value })} placeholder="Category" />
+                                <textarea style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} value={editData.description} onChange={e => setEditData({ ...editData, description: e.target.value })} placeholder="Description" rows="4" />
+                                <input style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} value={editData.location} onChange={e => setEditData({ ...editData, location: e.target.value })} placeholder="Location" />
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                            <button onClick={saveEditItem} style={{ flex: 1, padding: '12px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Save Changes</button>
+                            <button onClick={() => setEditMode(null)} style={{ flex: 1, padding: '12px', backgroundColor: '#eee', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
