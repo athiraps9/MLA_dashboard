@@ -10,7 +10,7 @@ import api from '../utils/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import '../styles/variables.css';
-import { FaClipboardList, FaCheckCircle, FaProjectDiagram, FaStar, FaSave, FaTimes, FaUser, FaLock, FaMapMarkerAlt, FaGraduationCap, FaTrash, FaSearch, FaArrowRight, FaPlus } from 'react-icons/fa';
+import { FaClipboardList, FaCheckCircle, FaProjectDiagram, FaStar, FaSave, FaTimes, FaUser, FaLock, FaMapMarkerAlt, FaGraduationCap, FaTrash, FaSearch, FaArrowRight, FaPlus, FaChevronDown, FaSignOutAlt } from 'react-icons/fa';
 import ProjectRating from '../components/ProjectRating';
 import AvatarUpload from '../components/AvatarUpload';
 import { SERVER_URL } from '../utils/api';
@@ -23,6 +23,7 @@ const UserDashboard = () => {
     const [projects, setProjects] = useState([]); // All approved projects
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // Complaint Form
     const [complaintForm, setComplaintForm] = useState({ title: '', description: '' });
@@ -162,6 +163,12 @@ const UserDashboard = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+    };
+
     const renderProfileView = () => (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -265,7 +272,10 @@ const UserDashboard = () => {
         kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' },
         inputGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
         label: { fontWeight: 'bold', fontSize: '0.9rem', color: '#1a365d' },
-        input: { padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0', fontSize: '1rem', width: '100%' }
+        input: { padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0', fontSize: '1rem', width: '100%' },
+        sidebarHeader: { position: 'relative', textAlign: 'center', marginBottom: '20px', cursor: 'pointer', padding: '10px', borderRadius: '10px', transition: 'background 0.2s' },
+        sidebarDropdown: { position: 'absolute', top: '100%', left: '0', right: '0', background: 'white', boxShadow: '0 5px 20px rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden', zIndex: 1000, marginTop: '5px' },
+        dropdownItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px', cursor: 'pointer', transition: 'background 0.2s', fontSize: '0.9rem', color: '#333', textAlign: 'left' }
     };
 
     if (loading) return <div>Loading...</div>;
@@ -274,16 +284,48 @@ const UserDashboard = () => {
         <div style={styles.container}>
             {/* Sidebar */}
             <div style={styles.sidebar}>
-                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                    <div style={{ width: '80px', height: '80px', margin: '0 auto 10px', borderRadius: '50%', overflow: 'hidden' }}>
+                <div
+                    style={{ ...styles.sidebarHeader, background: isDropdownOpen ? '#eee' : 'transparent' }}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                    <div style={{ width: '80px', height: '80px', margin: '0 auto 10px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary-color)' }}>
                         {user.avatar ? (
                             <img src={`${SERVER_URL}${user.avatar}`} alt="Pro" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             <div style={{ width: '100%', height: '100%', background: '#ddd' }}></div>
                         )}
                     </div>
-                    <h4>{user.fullName}</h4>
+                    <h4>{user.fullName} <FaChevronDown size={12} color="#888" style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} /></h4>
                     <p style={{ fontSize: '0.8rem', color: '#666' }}>Citizen</p>
+
+                    {isDropdownOpen && (
+                        <div style={styles.sidebarDropdown}>
+                            <div
+                                style={styles.dropdownItem}
+                                onClick={(e) => { e.stopPropagation(); setActiveSection('dashboard'); setIsDropdownOpen(false); }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f8f9fa'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <FaProjectDiagram size={14} /> Dashboard
+                            </div>
+                            <div
+                                style={styles.dropdownItem}
+                                onClick={(e) => { e.stopPropagation(); setActiveSection('profile'); setIsDropdownOpen(false); }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f8f9fa'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <FaUser size={14} /> My Profile
+                            </div>
+                            <div
+                                style={{ ...styles.dropdownItem, borderTop: '1px solid #eee', color: '#c53030' }}
+                                onClick={(e) => { e.stopPropagation(); handleLogout(); }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#fff5f5'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <FaSignOutAlt size={14} /> Logout
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div style={styles.menuItem(activeSection === 'dashboard')} onClick={() => setActiveSection('dashboard')}>Dashboard</div>
                 <div style={styles.menuItem(activeSection === 'projects')} onClick={() => setActiveSection('projects')}>Active Projects</div>
@@ -293,218 +335,220 @@ const UserDashboard = () => {
 
             {/* Main Content */}
             <div style={styles.content}>
-                {activeSection === 'dashboard' && (
-                    <>
-                        <h2>Welcome Back, {user.fullName}</h2>
-                        <div style={styles.kpiGrid}>
-                            <Card>
-                                <FaClipboardList size={24} color="var(--primary-color)" />
-                                <h3>{myComplaints.length}</h3>
-                                <p>My Complaints</p>
-                            </Card>
-                            <Card>
-                                <FaCheckCircle size={24} color="green" />
-                                <h3>{myComplaints.filter(c => c.status === 'Resolved').length}</h3>
-                                <p>Resolved</p>
-                            </Card>
-                            <Card>
-                                <FaProjectDiagram size={24} color="orange" />
-                                <h3>{projects.length}</h3>
-                                <p>Active Projects</p>
-                            </Card>
-                        </div>
-                    </>
-                )}
-
-                {activeSection === 'projects' && (
-                    <>
-                        <h2>Ongoing Projects</h2>
-                        <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
-                            {projects.map(p => (
-                                <Card key={p._id} title={p.title}>
-                                    <p>{p.description}</p>
-                                    <p><strong>Status:</strong> {p.status}</p>
-                                    <p><strong>Invested:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
-
-                                    <ProjectRating projectId={p._id} onRate={fetchProjects} />
-
-                                    {p.ratings && p.ratings.length > 0 && (
-                                        <div style={{ marginTop: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
-                                            <h5>Community Reviews ({p.ratings.length})</h5>
-                                            {p.ratings.slice(0, 3).map((r, i) => (
-                                                <div key={i} style={{ borderBottom: '1px solid #eee', padding: '5px 0', fontSize: '0.9rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                        <FaStar color="#ffc107" size={12} /> {r.rating}
-                                                        <span style={{ color: '#aaa', fontSize: '0.8rem' }}> - {new Date(r.createdAt).toLocaleDateString()}</span>
-                                                    </div>
-                                                    {r.comment && <p style={{ margin: '5px 0 0' }}>"{r.comment}"</p>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                <div style={{ padding: '30px' }}>
+                    {activeSection === 'dashboard' && (
+                        <>
+                            <h2>Welcome Back, {user.fullName}</h2>
+                            <div style={styles.kpiGrid}>
+                                <Card>
+                                    <FaClipboardList size={24} color="var(--primary-color)" />
+                                    <h3>{myComplaints.length}</h3>
+                                    <p>My Complaints</p>
                                 </Card>
-                            ))}
-                        </div>
-                    </>
-                )}
-
-                {activeSection === 'complaints' && (
-                    <>
-                        <h2>My Complaints</h2>
-                        <Card title="Submit New Complaint" style={{ marginBottom: '20px' }}>
-                            <form onSubmit={handleComplaintSubmit} style={{ display: 'grid', gap: '15px' }}>
-                                <input placeholder="Title" value={complaintForm.title} onChange={e => setComplaintForm({ ...complaintForm, title: e.target.value })} required style={{ padding: '10px' }} />
-                                <textarea placeholder="Description" value={complaintForm.description} onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })} required style={{ padding: '10px', height: '100px' }} />
-                                <Button type="submit">Submit Complaint</Button>
-                            </form>
-                        </Card>
-
-                        <div style={{ display: 'grid', gap: '15px' }}>
-                            {myComplaints.map(c => (
-                                <div key={c._id} className="card p-3">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <h4>{c.title}</h4>
-                                        <span className={`badge badge-${c.status === 'Resolved' ? 'success' : 'warning'}`}>{c.status}</span>
-                                    </div>
-                                    <p>{c.description}</p>
-                                    {c.adminResponse && <div className="bg-light p-2 mt-2"><strong>Response:</strong> {c.adminResponse}</div>}
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                )}
-
-                {activeSection === 'profile' && !isEditing && renderProfileView()}
-
-                {activeSection === 'profile' && isEditing && (
-                    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h2>Edit Profile</h2>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
-                                <Button onClick={handleProfileSave} disabled={loading}>
-                                    <FaSave style={{ marginRight: '8px' }} /> Save Changes
-                                </Button>
+                                <Card>
+                                    <FaCheckCircle size={24} color="green" />
+                                    <h3>{myComplaints.filter(c => c.status === 'Resolved').length}</h3>
+                                    <p>Resolved</p>
+                                </Card>
+                                <Card>
+                                    <FaProjectDiagram size={24} color="orange" />
+                                    <h3>{projects.length}</h3>
+                                    <p>Active Projects</p>
+                                </Card>
                             </div>
-                        </div>
+                        </>
+                    )}
 
-                        {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+                    {activeSection === 'projects' && (
+                        <>
+                            <h2>Ongoing Projects</h2>
+                            <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
+                                {projects.map(p => (
+                                    <Card key={p._id} title={p.title}>
+                                        <p>{p.description}</p>
+                                        <p><strong>Status:</strong> {p.status}</p>
+                                        <p><strong>Invested:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
 
-                        <Card title="Account Details">
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
-                                <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
-                                <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '10px' }}>Click photo to update</p>
-                            </div>
+                                        <ProjectRating projectId={p._id} onRate={fetchProjects} />
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Username</label>
-                                    <input name="username" value={editData.username} onChange={handleEditChange} style={styles.input} />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Email Address</label>
-                                    <input name="email" value={editData.email} onChange={handleEditChange} style={styles.input} />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Full Name</label>
-                                    <input name="fullName" value={editData.fullName} onChange={handleEditChange} style={styles.input} />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>New Password (leave blank to keep current)</label>
-                                    <input type="password" name="password" value={editData.password} onChange={handleEditChange} style={styles.input} placeholder="••••••••" />
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card title="Personal Information" style={{ marginTop: '20px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Phone Number</label>
-                                    <input name="phoneNumber" value={editData.phoneNumber} onChange={handleEditChange} style={styles.input} />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Date of Birth</label>
-                                    <input type="date" name="dateOfBirth" value={editData.dateOfBirth?.split('T')[0]} onChange={handleEditChange} style={styles.input} />
-                                </div>
-                                <div style={{ ...styles.inputGroup, gridColumn: 'span 2' }}>
-                                    <label style={styles.label}>Gender</label>
-                                    <div style={{ display: 'flex', gap: '20px' }}>
-                                        {['Male', 'Female', 'Other'].map(g => (
-                                            <label key={g} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <input type="radio" name="gender" value={g} checked={editData.gender === g} onChange={handleEditChange} /> {g}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card title="Location Details" style={{ marginTop: '20px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <label style={styles.label}>Constituency</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <FaSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-                                        <input
-                                            placeholder="Search constituency..."
-                                            value={searchConstituency || editData.constituency}
-                                            onChange={(e) => {
-                                                setSearchConstituency(e.target.value);
-                                                setShowConstituencySuggestions(true);
-                                            }}
-                                            onFocus={() => setShowConstituencySuggestions(true)}
-                                            style={{ ...styles.input, paddingLeft: '35px' }}
-                                        />
-                                        {showConstituencySuggestions && (
-                                            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #ddd', borderRadius: '4px', zIndex: 10, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                                                {KERALA_CONSTITUENCIES.filter(c => c.toLowerCase().includes(searchConstituency.toLowerCase())).map(c => (
-                                                    <div key={c} onClick={() => { setEditData(p => ({ ...p, constituency: c })); setSearchConstituency(c); setShowConstituencySuggestions(false); }} style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #eee' }}>{c}</div>
+                                        {p.ratings && p.ratings.length > 0 && (
+                                            <div style={{ marginTop: '15px', background: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
+                                                <h5>Community Reviews ({p.ratings.length})</h5>
+                                                {p.ratings.slice(0, 3).map((r, i) => (
+                                                    <div key={i} style={{ borderBottom: '1px solid #eee', padding: '5px 0', fontSize: '0.9rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                            <FaStar color="#ffc107" size={12} /> {r.rating}
+                                                            <span style={{ color: '#aaa', fontSize: '0.8rem' }}> - {new Date(r.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                        {r.comment && <p style={{ margin: '5px 0 0' }}>"{r.comment}"</p>}
+                                                    </div>
                                                 ))}
                                             </div>
                                         )}
-                                    </div>
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Address</label>
-                                    <textarea name="address" value={editData.address} onChange={handleEditChange} style={{ ...styles.input, height: '80px', resize: 'none' }} />
-                                </div>
+                                    </Card>
+                                ))}
                             </div>
-                        </Card>
+                        </>
+                    )}
 
-                        <Card title="Education Details" style={{ marginTop: '20px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-                                <Button onClick={addEducation} size="sm"><FaPlus /> Add Education</Button>
+                    {activeSection === 'complaints' && (
+                        <>
+                            <h2>My Complaints</h2>
+                            <Card title="Submit New Complaint" style={{ marginBottom: '20px' }}>
+                                <form onSubmit={handleComplaintSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                    <input placeholder="Title" value={complaintForm.title} onChange={e => setComplaintForm({ ...complaintForm, title: e.target.value })} required style={{ padding: '10px' }} />
+                                    <textarea placeholder="Description" value={complaintForm.description} onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })} required style={{ padding: '10px', height: '100px' }} />
+                                    <Button type="submit">Submit Complaint</Button>
+                                </form>
+                            </Card>
+
+                            <div style={{ display: 'grid', gap: '15px' }}>
+                                {myComplaints.map(c => (
+                                    <div key={c._id} className="card p-3">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <h4>{c.title}</h4>
+                                            <span className={`badge badge-${c.status === 'Resolved' ? 'success' : 'warning'}`}>{c.status}</span>
+                                        </div>
+                                        <p>{c.description}</p>
+                                        {c.adminResponse && <div className="bg-light p-2 mt-2"><strong>Response:</strong> {c.adminResponse}</div>}
+                                    </div>
+                                ))}
                             </div>
-                            {editData.education?.map((edu, index) => (
-                                <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 40px', gap: '15px', marginBottom: '10px', background: '#f8f9fa', padding: '10px', borderRadius: '4px', alignItems: 'end' }}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Qualification</label>
-                                        <select name="qualification" value={edu.qualification} onChange={(e) => handleEducationChange(index, e)} style={styles.input}>
-                                            <option value="">Select Degree</option>
-                                            <option value="Undergraduate">Undergraduate</option>
-                                            <option value="Postgraduate">Postgraduate</option>
-                                            <option value="PhD">PhD</option>
-                                            <option value="Diploma">Diploma</option>
-                                            <option value="SSLC">SSLC</option>
-                                            <option value="Plus Two">Plus Two</option>
-                                        </select>
-                                    </div>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Institution</label>
-                                        <input name="institution" value={edu.institution} onChange={(e) => handleEducationChange(index, e)} style={styles.input} placeholder="College / School" />
-                                    </div>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Year</label>
-                                        <input name="passingYear" value={edu.passingYear} onChange={(e) => handleEducationChange(index, e)} style={styles.input} placeholder="YYYY" />
-                                    </div>
-                                    <button onClick={() => removeEducation(index)} style={{ padding: '8px', color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>
-                                        <FaTrash />
-                                    </button>
+                        </>
+                    )}
+
+                    {activeSection === 'profile' && !isEditing && renderProfileView()}
+
+                    {activeSection === 'profile' && isEditing && (
+                        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h2>Edit Profile</h2>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                    <Button onClick={handleProfileSave} disabled={loading}>
+                                        <FaSave style={{ marginRight: '8px' }} /> Save Changes
+                                    </Button>
                                 </div>
-                            ))}
-                        </Card>
-                    </div>
-                )}
+                            </div>
+
+                            {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+
+                            <Card title="Account Details">
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
+                                    <AvatarUpload src={previewUrl} onFileSelect={handleFileSelect} editable={true} />
+                                    <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '10px' }}>Click photo to update</p>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Username</label>
+                                        <input name="username" value={editData.username} onChange={handleEditChange} style={styles.input} />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Email Address</label>
+                                        <input name="email" value={editData.email} onChange={handleEditChange} style={styles.input} />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Full Name</label>
+                                        <input name="fullName" value={editData.fullName} onChange={handleEditChange} style={styles.input} />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>New Password (leave blank to keep current)</label>
+                                        <input type="password" name="password" value={editData.password} onChange={handleEditChange} style={styles.input} placeholder="••••••••" />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card title="Personal Information" style={{ marginTop: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Phone Number</label>
+                                        <input name="phoneNumber" value={editData.phoneNumber} onChange={handleEditChange} style={styles.input} />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Date of Birth</label>
+                                        <input type="date" name="dateOfBirth" value={editData.dateOfBirth?.split('T')[0]} onChange={handleEditChange} style={styles.input} />
+                                    </div>
+                                    <div style={{ ...styles.inputGroup, gridColumn: 'span 2' }}>
+                                        <label style={styles.label}>Gender</label>
+                                        <div style={{ display: 'flex', gap: '20px' }}>
+                                            {['Male', 'Female', 'Other'].map(g => (
+                                                <label key={g} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                    <input type="radio" name="gender" value={g} checked={editData.gender === g} onChange={handleEditChange} /> {g}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card title="Location Details" style={{ marginTop: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div style={{ position: 'relative' }}>
+                                        <label style={styles.label}>Constituency</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <FaSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+                                            <input
+                                                placeholder="Search constituency..."
+                                                value={searchConstituency || editData.constituency}
+                                                onChange={(e) => {
+                                                    setSearchConstituency(e.target.value);
+                                                    setShowConstituencySuggestions(true);
+                                                }}
+                                                onFocus={() => setShowConstituencySuggestions(true)}
+                                                style={{ ...styles.input, paddingLeft: '35px' }}
+                                            />
+                                            {showConstituencySuggestions && (
+                                                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #ddd', borderRadius: '4px', zIndex: 10, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                                                    {KERALA_CONSTITUENCIES.filter(c => c.toLowerCase().includes(searchConstituency.toLowerCase())).map(c => (
+                                                        <div key={c} onClick={() => { setEditData(p => ({ ...p, constituency: c })); setSearchConstituency(c); setShowConstituencySuggestions(false); }} style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #eee' }}>{c}</div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Address</label>
+                                        <textarea name="address" value={editData.address} onChange={handleEditChange} style={{ ...styles.input, height: '80px', resize: 'none' }} />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card title="Education Details" style={{ marginTop: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+                                    <Button onClick={addEducation} size="sm"><FaPlus /> Add Education</Button>
+                                </div>
+                                {editData.education?.map((edu, index) => (
+                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 40px', gap: '15px', marginBottom: '10px', background: '#f8f9fa', padding: '10px', borderRadius: '4px', alignItems: 'end' }}>
+                                        <div style={styles.inputGroup}>
+                                            <label style={styles.label}>Qualification</label>
+                                            <select name="qualification" value={edu.qualification} onChange={(e) => handleEducationChange(index, e)} style={styles.input}>
+                                                <option value="">Select Degree</option>
+                                                <option value="Undergraduate">Undergraduate</option>
+                                                <option value="Postgraduate">Postgraduate</option>
+                                                <option value="PhD">PhD</option>
+                                                <option value="Diploma">Diploma</option>
+                                                <option value="SSLC">SSLC</option>
+                                                <option value="Plus Two">Plus Two</option>
+                                            </select>
+                                        </div>
+                                        <div style={styles.inputGroup}>
+                                            <label style={styles.label}>Institution</label>
+                                            <input name="institution" value={edu.institution} onChange={(e) => handleEducationChange(index, e)} style={styles.input} placeholder="College / School" />
+                                        </div>
+                                        <div style={styles.inputGroup}>
+                                            <label style={styles.label}>Year</label>
+                                            <input name="passingYear" value={edu.passingYear} onChange={(e) => handleEducationChange(index, e)} style={styles.input} placeholder="YYYY" />
+                                        </div>
+                                        <button onClick={() => removeEducation(index)} style={{ padding: '8px', color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>
+                                            <FaTrash />
+                                        </button>
+                                    </div>
+                                ))}
+                            </Card>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -129,12 +129,14 @@ const AdminProfile = () => {
                                 <span>Profile</span>
                             </Link>
                         </li>
-                        <li style={{ marginBottom: '8px' }}>
+                        {/* <li style={{ marginBottom: '8px' }}>
                             <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', color: '#64748B', textDecoration: 'none', borderRadius: '12px', fontWeight: 600 }}>
                                 <span className="material-symbols-outlined">settings</span>
                                 <span>Settings</span>
                             </Link>
-                        </li>
+                        </li> */}
+
+
                     </ul>
                 </nav>
                 <div style={{ padding: '32px', borderTop: '1px solid #F1F5F9' }}>
