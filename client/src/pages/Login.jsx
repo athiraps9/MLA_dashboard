@@ -3,13 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { FaUser, FaLock, FaArrowRight, FaIdCard, FaUsers } from 'react-icons/fa';
+import { FaUser, FaLock, FaArrowRight, FaIdCard, FaUsers, FaEye, FaEyeSlash } from 'react-icons/fa';
 import '../styles/variables.css';
 
 const Login = ({ onLogin }) => {
     const [formData, setFormData] = useState({ username: '', password: '', userType: 'public' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -134,7 +135,7 @@ const Login = ({ onLogin }) => {
             opacity: 0.7
         },
         input: {
-            padding: '14px 16px 14px 48px',
+            padding: '14px 48px 14px 48px',
             borderRadius: 'var(--radius-md)',
             border: '2px solid rgba(6, 182, 212, 0.1)',
             fontSize: '1rem',
@@ -179,6 +180,21 @@ const Login = ({ onLogin }) => {
             marginTop: '30px',
             fontSize: '1rem',
             color: 'var(--text-muted)'
+        },
+        eyeIcon: {
+            position: 'absolute',
+            right: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--primary-teal)',
+            fontSize: '1.2rem',
+            cursor: 'pointer',
+            opacity: 0.7,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '5px',
+            zIndex: 2
         }
     };
 
@@ -233,7 +249,7 @@ const Login = ({ onLogin }) => {
                         <div style={styles.inputWrapper}>
                             <FaLock style={styles.icon} />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -241,6 +257,12 @@ const Login = ({ onLogin }) => {
                                 required
                                 placeholder="••••••••"
                             />
+                            <div
+                                style={styles.eyeIcon}
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </div>
                         </div>
                     </div>
 

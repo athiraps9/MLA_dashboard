@@ -1,11 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { FaUser, FaLock, FaMapMarkerAlt, FaGraduationCap, FaTrash, FaSearch, FaArrowRight, FaPlus } from 'react-icons/fa';
-import { KERALA_CONSTITUENCIES } from '../utils/constituencies';
+import { FaUser, FaLock, FaMapMarkerAlt, FaGraduationCap, FaTrash, FaSearch, FaArrowRight, FaPlus, FaCheck, FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
 import '../styles/variables.css';
+
+const PERINTHALMANNA_SEGMENTS = [
+    "Perinthalmanna Municipality",
+    "Melattur Gram Panchayat",
+    "Vettathur Gram Panchayat",
+    "Thazhekode Gram Panchayat",
+    "Aliparamba Gram Panchayat",
+    "Pulamanthole Gram Panchayat",
+    "Elamkulam Gram Panchayat"
+];
 
 const Signup = ({ onLogin }) => {
     const [formData, setFormData] = useState({
@@ -24,16 +33,96 @@ const Signup = ({ onLogin }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showConstituencyList, setShowConstituencyList] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [touched, setTouched] = useState({});
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const inputRefs = {
+        username: useRef(null),
+        email: useRef(null),
+        password: useRef(null),
+        confirmPassword: useRef(null),
+        phoneNumber: useRef(null)
+    };
+
     const navigate = useNavigate();
 
-    const filteredConstituencies = KERALA_CONSTITUENCIES.filter(c =>
+    const validateField = (name, value) => {
+        let error = '';
+        switch (name) {
+            case 'username':
+                if (!value) error = 'Username is required';
+                else if (value.length < 3) error = 'Username must be at least 3 characters';
+                break;
+            case 'email':
+                if (!value) error = 'Email address is required';
+                else if (!/\S+@\S+\.\S+/.test(value)) error = 'Invalid email format';
+                break;
+            case 'password':
+                if (!value) error = 'Password is required';
+                else {
+                    const requirements = [
+                        { regex: /.{8,}/, message: 'At least 8 characters' },
+                        { regex: /[A-Z]/, message: 'At least 1 uppercase letter' },
+                        { regex: /[a-z]/, message: 'At least 1 lowercase letter' },
+                        { regex: /[0-9]/, message: 'At least 1 number' },
+                        { regex: /[^A-Za-z0-9]/, message: 'At least 1 special character' }
+                    ];
+                    const failed = requirements.filter(req => !req.regex.test(value));
+                    if (failed.length > 0) error = 'Password does not meet requirements';
+                }
+                break;
+            case 'confirmPassword':
+                if (!value) error = 'Please confirm your password';
+                else if (value !== formData.password) error = 'Passwords do not match';
+                break;
+            case 'phoneNumber':
+                if (!value) error = 'Phone number is required';
+                break;
+            default:
+                break;
+        }
+        return error;
+    };
+
+    const getPasswordRequirements = (val) => {
+        return [
+            { label: '8+ characters', met: val.length >= 8 },
+            { label: 'Uppercase letter', met: /[A-Z]/.test(val) },
+            { label: 'Lowercase letter', met: /[a-z]/.test(val) },
+            { label: 'Number', met: /[0-9]/.test(val) },
+            { label: 'Special character', met: /[^A-Za-z0-9]/.test(val) }
+        ];
+    };
+
+    const filteredConstituencies = PERINTHALMANNA_SEGMENTS.filter(c =>
         c.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Real-time validation
+        if (touched[name]) {
+            const fieldError = validateField(name, value);
+            setFieldErrors(prev => ({ ...prev, [name]: fieldError }));
+        }
+
+        // Specifically for password/confirmPassword interaction
+        if (name === 'password' && touched.confirmPassword) {
+            const confirmError = value === formData.confirmPassword ? '' : 'Passwords do not match';
+            setFieldErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+        }
+    };
+
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+        const fieldError = validateField(name, value);
+        setFieldErrors(prev => ({ ...prev, [name]: fieldError }));
     };
 
     const handleEducationChange = (index, e) => {
@@ -60,8 +149,26 @@ const Signup = ({ onLogin }) => {
         e.preventDefault();
         setError('');
 
-        if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+        // Validate all fields
+        const newErrors = {};
+        const fieldsToValidate = ['username', 'email', 'password', 'confirmPassword', 'phoneNumber'];
+        let firstInvalidField = null;
+
+        fieldsToValidate.forEach(field => {
+            const err = validateField(field, formData[field]);
+            if (err) {
+                newErrors[field] = err;
+                if (!firstInvalidField) firstInvalidField = field;
+            }
+        });
+
+        setFieldErrors(newErrors);
+        setTouched(fieldsToValidate.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
+
+        if (Object.keys(newErrors).length > 0) {
+            if (firstInvalidField && inputRefs[firstInvalidField]?.current) {
+                inputRefs[firstInvalidField].current.focus();
+            }
             return;
         }
 
@@ -279,6 +386,54 @@ const Signup = ({ onLogin }) => {
             marginBottom: '20px',
             fontSize: '0.9rem',
             border: '1px solid #feb2b2'
+        },
+        fieldError: {
+            color: 'var(--danger-color)',
+            fontSize: '0.8rem',
+            marginTop: '4px',
+            fontWeight: '500'
+        },
+        inputError: {
+            borderColor: 'var(--danger-color)',
+            backgroundColor: '#fffcfc'
+        },
+        hintGroup: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '8px',
+            marginTop: '10px',
+            padding: '12px',
+            backgroundColor: '#f8f9fa',
+            borderRadius: 'var(--radius-md)',
+            gridColumn: 'span 2'
+        },
+        hintItem: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.75rem',
+            color: 'var(--text-secondary)',
+            transition: 'color 0.2s'
+        },
+        hintMet: {
+            color: 'var(--success-color)',
+            fontWeight: '600'
+        },
+        passwordWrapper: {
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center'
+        },
+        eyeIcon: {
+            position: 'absolute',
+            right: '15px',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
+            fontSize: '1.2rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '5px'
         }
     };
 
@@ -306,51 +461,104 @@ const Signup = ({ onLogin }) => {
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Username *</label>
                                 <input
+                                    ref={inputRefs.username}
                                     type="text"
                                     name="username"
                                     placeholder="Enter your username"
                                     value={formData.username}
                                     onChange={handleChange}
-                                    style={styles.input}
-                                    required
+                                    onBlur={handleBlur}
+                                    style={{
+                                        ...styles.input,
+                                        ...(fieldErrors.username ? styles.inputError : {})
+                                    }}
                                 />
+                                {fieldErrors.username && <span style={styles.fieldError}>{fieldErrors.username}</span>}
                             </div>
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Email Address *</label>
                                 <input
+                                    ref={inputRefs.email}
                                     type="email"
                                     name="email"
                                     placeholder="name@example.com"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    style={styles.input}
-                                    required
+                                    onBlur={handleBlur}
+                                    style={{
+                                        ...styles.input,
+                                        ...(fieldErrors.email ? styles.inputError : {})
+                                    }}
                                 />
+                                {fieldErrors.email && <span style={styles.fieldError}>{fieldErrors.email}</span>}
                             </div>
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Password *</label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    placeholder="Create a password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    required
-                                />
+                                <div style={styles.passwordWrapper}>
+                                    <input
+                                        ref={inputRefs.password}
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        placeholder="Create a password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        style={{
+                                            ...styles.input,
+                                            paddingRight: '45px',
+                                            ...(fieldErrors.password ? styles.inputError : {})
+                                        }}
+                                    />
+                                    <div
+                                        style={styles.eyeIcon}
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </div>
+                                </div>
+                                {fieldErrors.password && <span style={styles.fieldError}>{fieldErrors.password}</span>}
                             </div>
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Confirm Password *</label>
-                                <input
-                                    type="password"
-                                    name="confirmPassword"
-                                    placeholder="Re-enter password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    style={styles.input}
-                                    required
-                                />
+                                <div style={styles.passwordWrapper}>
+                                    <input
+                                        ref={inputRefs.confirmPassword}
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        name="confirmPassword"
+                                        placeholder="Re-enter password"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        style={{
+                                            ...styles.input,
+                                            paddingRight: '45px',
+                                            ...(fieldErrors.confirmPassword ? styles.inputError : {})
+                                        }}
+                                    />
+                                    <div
+                                        style={styles.eyeIcon}
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </div>
+                                </div>
+                                {fieldErrors.confirmPassword && <span style={styles.fieldError}>{fieldErrors.confirmPassword}</span>}
                             </div>
+
+                            {/* Password Complexity Hints */}
+                            {(formData.password || touched.password) && (
+                                <div style={styles.hintGroup}>
+                                    {getPasswordRequirements(formData.password).map((req, i) => (
+                                        <div key={i} style={{
+                                            ...styles.hintItem,
+                                            ...(req.met ? styles.hintMet : {})
+                                        }}>
+                                            {req.met ? <FaCheck size={10} /> : <FaTimes size={10} />}
+                                            {req.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -363,14 +571,19 @@ const Signup = ({ onLogin }) => {
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Phone Number *</label>
                                 <input
+                                    ref={inputRefs.phoneNumber}
                                     type="tel"
                                     name="phoneNumber"
                                     placeholder="+91 XXXXX XXXXX"
                                     value={formData.phoneNumber}
                                     onChange={handleChange}
-                                    style={styles.input}
-                                    required
+                                    onBlur={handleBlur}
+                                    style={{
+                                        ...styles.input,
+                                        ...(fieldErrors.phoneNumber ? styles.inputError : {})
+                                    }}
                                 />
+                                {fieldErrors.phoneNumber && <span style={styles.fieldError}>{fieldErrors.phoneNumber}</span>}
                             </div>
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Date of Birth</label>
@@ -405,7 +618,7 @@ const Signup = ({ onLogin }) => {
                     {/* Location Details */}
                     <div style={styles.section}>
                         <div style={styles.sectionHeader}>
-                            <FaMapMarkerAlt style={styles.icon} /> <span>Location Details</span>
+                            <span>Location Details</span>
                         </div>
                         <div style={styles.grid}>
                             <div style={styles.constituencyContainer}>
@@ -447,7 +660,6 @@ const Signup = ({ onLogin }) => {
                                         </div>
                                     )}
                                 </div>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '5px' }}>Start typing to filter constituencies</p>
                             </div>
                             <div style={{ ...styles.inputGroup, gridColumn: '2 / 3' }}>
                                 <label style={styles.label}>Address</label>
