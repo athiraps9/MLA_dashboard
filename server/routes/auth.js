@@ -244,4 +244,138 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
     }
 });
 
+// Forgot Password - Request reset link
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
+    try {
+        // Validate email format
+        if (!email || !/\S+@\S+\.\S+/.test(email)) {
+            return res.status(400).json({ message: 'Please provide a valid email address' });
+        }
+
+        // Find user by email
+        const user = await User.findOne({ email });
+
+        // Always return success message (don't reveal if email exists)
+        const successMessage = 'If an account exists with this email, a password reset link has been sent.';
+
+        if (!user) {
+            // Don't reveal that user doesn't exist
+            return res.json({ message: successMessage });
+        }
+
+        // Generate secure random token
+        const crypto = require('crypto');
+        const resetToken = crypto.randomBytes(32).toString('hex');
+
+        // Hash token before storing
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+        // Set token and expiration (1 hour)
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        await user.save();
+
+        // Create reset URL
+        const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+        // Send email
+        const nodemailer = require('nodemailer');
+        
+        const transporter = nodemailer.createTransport({
+            service: process.env.EMAIL_SERVICE || 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: 'Password Reset Request - Perinthalmanna E-Governance',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #06b6d4;">Password Reset Request</h2>
+                    <p>Hello ${user.fullName},</p>
+                    <p>You requested to reset your password for your Perinthalmanna E-Governance account.</p>
+                    <p>Please click the button below to reset your password:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetUrl}" style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">Reset Password</a>
+                    </div>
+                    <p>Or copy and paste this link in your browser:</p>
+                    <p style="color: #666; word-break: break-all;">${resetUrl}</p>
+                    <p style="color: #ef4444; margin-top: 20px;"><strong>This link will expire in 1 hour.</strong></p>
+                    <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                    <p style="color: #9ca3af; font-size: 12px;">Perinthalmanna Legislative Assembly Portal</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.json({ message: successMessage });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
+    }
+});
+
+// Reset Password - Update password with token
+router.post('/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+
+    try {
+        // Validate inputs
+        if (!token || !password) {
+            return res.status(400).json({ message: 'Token and password are required' });
+        }
+
+        // Validate password requirements
+        if (password.length < 8) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+        }
+
+        const passwordRequirements = [
+            { regex: /[A-Z]/, message: 'Password must contain at least one uppercase letter' },
+            { regex: /[a-z]/, message: 'Password must contain at least one lowercase letter' },
+            { regex: /[0-9]/, message: 'Password must contain at least one number' },
+            { regex: /[^A-Za-z0-9]/, message: 'Password must contain at least one special character' }
+        ];
+
+        for (const req of passwordRequirements) {
+            if (!req.regex.test(password)) {
+                return res.status(400).json({ message: req.message });
+            }
+        }
+
+        // Hash the token to compare with stored hash
+        const crypto = require('crypto');
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        // Find user with valid token and not expired
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        // Update password (will be hashed by pre-save hook)
+        user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: 'Password has been reset successfully. You can now login with your new password.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ message: 'Error resetting password. Please try again.' });
+    }
+});
+
 module.exports = router;

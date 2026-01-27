@@ -266,6 +266,23 @@ const Login = ({ onLogin }) => {
                         </div>
                     </div>
 
+                    <div style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '15px' }}>
+                        <Link
+                            to="/forgot-password"
+                            style={{
+                                color: 'var(--primary-teal)',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                textDecoration: 'none',
+                                transition: 'var(--transition)'
+                            }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                        >
+                            Forgot Password?
+                        </Link>
+                    </div>
+
                     <button type="submit" style={styles.submitBtn} disabled={loading}>
                         {loading ? 'Logging in...' : <>Login <FaArrowRight /></>}
                     </button>

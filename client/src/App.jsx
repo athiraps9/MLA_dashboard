@@ -16,6 +16,8 @@ import { LanguageProvider } from './context/LanguageContext';
 import PADashboard from './pages/PADashboard'; // New
 import UserDashboard from './pages/UserDashboard'; // New
 import AdminProfile from './pages/AdminProfile'; // New
+import ForgotPassword from './pages/ForgotPassword'; // Password Reset
+import ResetPassword from './pages/ResetPassword'; // Password Reset
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -65,6 +67,8 @@ const App = () => {
 
               <Route path="/signup" element={<Signup onLogin={handleLogin} />} />
               <Route path="/login" element={<Login onLogin={handleLogin} />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Public User Dashboard */}
               <Route path="/user" element={

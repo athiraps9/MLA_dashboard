@@ -25,7 +25,9 @@ const UserSchema = new mongoose.Schema({
   }],
   district: { type: String }, // For MLA
   avatar: { type: String },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date }
 }, { timestamps: true });
 
 UserSchema.pre('save', async function(next) {
