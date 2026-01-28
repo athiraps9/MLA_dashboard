@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
-import { FaLock, FaArrowRight, FaCheckCircle, FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaLock, FaArrowRight, FaCheckCircle, FaEye, FaEyeSlash, FaCheck, FaTimes, FaEnvelope } from 'react-icons/fa';
 import '../styles/variables.css';
 
 const ResetPassword = () => {
-    const [searchParams] = useSearchParams();
-    const [formData, setFormData] = useState({ password: '', confirmPassword: '' });
+    const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
@@ -15,14 +14,6 @@ const ResetPassword = () => {
     const [touched, setTouched] = useState({});
     const [fieldErrors, setFieldErrors] = useState({});
     const navigate = useNavigate();
-
-    const token = searchParams.get('token');
-
-    useEffect(() => {
-        if (!token) {
-            setError('Invalid reset link. Please request a new password reset.');
-        }
-    }, [token]);
 
     const getPasswordRequirements = (val) => {
         return [
@@ -36,7 +27,10 @@ const ResetPassword = () => {
 
     const validateField = (name, value) => {
         let error = '';
-        if (name === 'password') {
+        if (name === 'email') {
+            if (!value) error = 'Email is required';
+            else if (!/\S+@\S+\.\S+/.test(value)) error = 'Please enter a valid email address';
+        } else if (name === 'password') {
             if (!value) error = 'Password is required';
             else {
                 const requirements = getPasswordRequirements(value);
@@ -78,20 +72,20 @@ const ResetPassword = () => {
         setSuccess('');
 
         const newErrors = {};
-        ['password', 'confirmPassword'].forEach(field => {
+        ['email', 'password', 'confirmPassword'].forEach(field => {
             const err = validateField(field, formData[field]);
             if (err) newErrors[field] = err;
         });
 
         setFieldErrors(newErrors);
-        setTouched({ password: true, confirmPassword: true });
+        setTouched({ email: true, password: true, confirmPassword: true });
 
         if (Object.keys(newErrors).length > 0) return;
 
         setLoading(true);
         try {
-            const res = await api.post('/auth/reset-password', {
-                token,
+            const res = await api.post('/auth/simple-reset-password', {
+                email: formData.email,
                 password: formData.password
             });
             setSuccess(res.data.message);
@@ -279,31 +273,12 @@ const ResetPassword = () => {
         }
     };
 
-    if (!token) {
-        return (
-            <div style={styles.pageContainer}>
-                <div style={styles.card}>
-                    <div style={styles.header}>
-                        <h1 style={styles.title}>Invalid Link</h1>
-                        <p style={styles.subtitle}>This password reset link is invalid</p>
-                    </div>
-                    <div style={styles.errorMsg}>
-                        Please request a new password reset link from the login page.
-                    </div>
-                    <div style={styles.backLink}>
-                        <Link to="/login" style={{ color: 'var(--primary-teal)', fontWeight: '700', textDecoration: 'underline' }}>Back to Login</Link>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div style={styles.pageContainer}>
             <div style={styles.card}>
                 <div style={styles.header}>
                     <h1 style={styles.title}>Reset Password</h1>
-                    <p style={styles.subtitle}>Enter your new password</p>
+                    <p style={styles.subtitle}>Enter your email and new password</p>
                 </div>
 
                 {error && <div style={styles.errorMsg}>{error}</div>}
@@ -314,6 +289,28 @@ const ResetPassword = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
+                    <div style={styles.inputGroup}>
+                        <label style={styles.label}>Email Address</label>
+                        <div style={styles.inputWrapper}>
+                            <FaEnvelope style={styles.icon} />
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                style={{
+                                    ...styles.input,
+                                    ...(fieldErrors.email ? styles.inputError : {})
+                                }}
+                                required
+                                placeholder="name@example.com"
+                                disabled={loading || success}
+                            />
+                        </div>
+                        {fieldErrors.email && <span style={styles.fieldError}>{fieldErrors.email}</span>}
+                    </div>
+
                     <div style={styles.inputGroup}>
                         <label style={styles.label}>New Password</label>
                         <div style={styles.inputWrapper}>

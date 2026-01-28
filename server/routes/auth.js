@@ -378,4 +378,55 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
+// Simple Reset Password - Direct password update with email (no token)
+router.post('/simple-reset-password', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Validate inputs
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+
+        // Validate email format
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            return res.status(400).json({ message: 'Please provide a valid email address' });
+        }
+
+        // Validate password requirements
+        if (password.length < 8) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+        }
+
+        const passwordRequirements = [
+            { regex: /[A-Z]/, message: 'Password must contain at least one uppercase letter' },
+            { regex: /[a-z]/, message: 'Password must contain at least one lowercase letter' },
+            { regex: /[0-9]/, message: 'Password must contain at least one number' },
+            { regex: /[^A-Za-z0-9]/, message: 'Password must contain at least one special character' }
+        ];
+
+        for (const req of passwordRequirements) {
+            if (!req.regex.test(password)) {
+                return res.status(400).json({ message: req.message });
+            }
+        }
+
+        // Find user by email
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email address' });
+        }
+
+        // Update password (will be hashed by pre-save hook)
+        user.password = password;
+        await user.save();
+
+        res.json({ message: 'Password has been reset successfully. You can now login with your new password.' });
+    } catch (err) {
+        console.error('Simple reset password error:', err);
+        res.status(500).json({ message: 'Error resetting password. Please try again.' });
+    }
+});
+
 module.exports = router;

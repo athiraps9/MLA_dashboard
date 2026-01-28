@@ -268,7 +268,7 @@ const Login = ({ onLogin }) => {
 
                     <div style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '15px' }}>
                         <Link
-                            to="/forgot-password"
+                            to="/reset-password"
                             style={{
                                 color: 'var(--primary-teal)',
                                 fontSize: '0.9rem',
