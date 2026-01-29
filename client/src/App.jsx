@@ -83,8 +83,9 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
-              <Route path="/mla-directory" element={<MLADirectory />} />
-              <Route path="/mla-directory/:id" element={<MLADetail />} />
+              {/* <Route path="/mla-directory" element={<MLADirectory />} /> */}
+              {/* <Route path="/mla-directory/:id" element={<MLADetail />} /> */}
+
 
               <Route path="/profile" element={
                 <ProtectedRoute>

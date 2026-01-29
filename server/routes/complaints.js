@@ -2,15 +2,17 @@ const express = require('express');
 const router = express.Router();
 const Complaint = require('../models/Complaint');
 const auth = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // Create Complaint (Public User)
-router.post('/', auth(['public']), async (req, res) => {
+router.post('/', auth(['public']), upload.single('image'), async (req, res) => {
   try {
     const { title, description } = req.body;
     const complaint = new Complaint({
       user: req.user.id,
       title,
-      description
+      description,
+      imageUrl: req.file ? `/uploads/${req.file.filename}` : ''
     });
     await complaint.save();
     res.status(201).json(complaint);

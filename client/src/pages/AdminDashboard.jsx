@@ -575,6 +575,7 @@ const AdminDashboard = () => {
                                             </span>
                                         </div>
                                         <p style={{ fontSize: '0.9rem', color: '#666' }}>By: {c.user?.fullName} ({c.user?.email})</p>
+                                        {c.imageUrl && <img src={`${SERVER_URL}${c.imageUrl}`} alt="Complaint" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }} />}
                                         <p>{c.description}</p>
                                     </div>
                                 ))}
@@ -590,6 +591,7 @@ const AdminDashboard = () => {
                                     {pending.projects.map(p => (
                                         <div key={p._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                             <h3>{p.title}</h3>
+                                            {p.imageUrl && <img src={`${SERVER_URL}${p.imageUrl}`} alt={p.title} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
                                             <p><strong>MLA:</strong> {p.mla?.fullName}</p>
                                             <p><strong>Desc:</strong> {p.description}</p>
                                             <p><strong>Budget:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
@@ -610,6 +612,7 @@ const AdminDashboard = () => {
                                     {pending.schemes.map(s => (
                                         <div key={s._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                             <h3>{s.category}</h3>
+                                            {s.imageUrl && <img src={`${SERVER_URL}${s.imageUrl}`} alt={s.category} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
                                             <p><strong>PA:</strong> {s.pa?.fullName}</p>
                                             <p><strong>Desc:</strong> {s.description}</p>
                                             <p><strong>Location:</strong> {s.location}</p>
@@ -630,6 +633,7 @@ const AdminDashboard = () => {
                                     {pending.events.map(ev => (
                                         <div key={ev._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                             <h3>{ev.category}</h3>
+                                            {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
                                             <p><strong>PA:</strong> {ev.pa?.fullName}</p>
                                             <p><strong>Desc:</strong> {ev.description}</p>
                                             <p><strong>Location:</strong> {ev.location}</p>
@@ -883,6 +887,7 @@ const AdminDashboard = () => {
                                                 {p.status}
                                             </span>
                                         </div>
+                                        {p.imageUrl && <img src={`${SERVER_URL}${p.imageUrl}`} alt={p.title} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
                                         <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>{p.description}</p>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button onClick={() => startEditItem(p, 'project')} style={{ flex: 1, padding: '10px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
@@ -902,6 +907,7 @@ const AdminDashboard = () => {
                                                 {s.status}
                                             </span>
                                         </div>
+                                        {s.imageUrl && <img src={`${SERVER_URL}${s.imageUrl}`} alt={s.category} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
                                         <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>{s.description}</p>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button onClick={() => startEditItem(s, 'scheme')} style={{ flex: 1, padding: '10px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
@@ -921,6 +927,7 @@ const AdminDashboard = () => {
                                                 {ev.status}
                                             </span>
                                         </div>
+                                        {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
                                         <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '16px' }}>{ev.description}</p>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <button onClick={() => startEditItem(ev, 'event')} style={{ flex: 1, padding: '10px', backgroundColor: '#6366F1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Edit</button>

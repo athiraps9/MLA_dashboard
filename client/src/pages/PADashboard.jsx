@@ -31,15 +31,20 @@ const PADashboard = () => {
 
     // Project State
     const [projects, setProjects] = useState([]);
-    const [projectForm, setProjectForm] = useState({ title: '', description: '', fundsAllocated: '', startDate: '', endDate: '', mlaId: '' });
+    const [projectForm, setProjectForm] = useState({ title: '', description: '', fundsAllocated: '', startDate: '', endDate: '', mlaId: '', image: null });
 
     // Schemes State
     const [schemes, setSchemes] = useState([]);
-    const [schemeForm, setSchemeForm] = useState({ date: '', time: '', location: '', category: '', description: '' });
+    const [schemeForm, setSchemeForm] = useState({ date: '', time: '', location: '', category: '', description: '', image: null });
 
     // Events State
     const [events, setEvents] = useState([]);
-    const [eventForm, setEventForm] = useState({ date: '', time: '', location: '', category: '', description: '' });
+    const [eventForm, setEventForm] = useState({ date: '', time: '', location: '', category: '', description: '', image: null });
+
+    // Helper for file change
+    const handleFileChange = (e, setForm, fieldName = 'image') => {
+        setForm(prev => ({ ...prev, [fieldName]: e.target.files[0] }));
+    };
 
     // Complaints State
     const [complaints, setComplaints] = useState([]);
@@ -266,9 +271,16 @@ const PADashboard = () => {
             const mlaRes2 = await api.get('/mla-directory');
             const mlaId = projectForm.mlaId || mlaRes2.data[0]?._id;
 
-            await api.post('/pa/project', { ...projectForm, mlaId });
+            const formData = new FormData();
+            Object.keys(projectForm).forEach(key => {
+                if (key === 'image' && projectForm[key]) formData.append('image', projectForm[key]);
+                else if (projectForm[key]) formData.append(key, projectForm[key]);
+            });
+            formData.append('mlaId', mlaId);
+
+            await api.post('/pa/project', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert('Project created!');
-            setProjectForm({ title: '', description: '', fundsAllocated: '', startDate: '', endDate: '', mlaId: '' });
+            setProjectForm({ title: '', description: '', fundsAllocated: '', startDate: '', endDate: '', mlaId: '', image: null });
             fetchProjects();
         } catch (err) { alert('Failed to create project'); }
     };
@@ -276,9 +288,15 @@ const PADashboard = () => {
     const handleSchemeSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/pa/scheme', schemeForm);
+            const formData = new FormData();
+            Object.keys(schemeForm).forEach(key => {
+                if (key === 'image' && schemeForm[key]) formData.append('image', schemeForm[key]);
+                else if (schemeForm[key]) formData.append(key, schemeForm[key]);
+            });
+
+            await api.post('/pa/scheme', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert('Scheme submitted for verification!');
-            setSchemeForm({ date: '', time: '', location: '', category: '', description: '' });
+            setSchemeForm({ date: '', time: '', location: '', category: '', description: '', image: null });
             fetchSchemes();
         } catch (err) { alert('Failed to submit scheme'); }
     };
@@ -286,9 +304,15 @@ const PADashboard = () => {
     const handleEventSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/pa/event', eventForm);
+            const formData = new FormData();
+            Object.keys(eventForm).forEach(key => {
+                if (key === 'image' && eventForm[key]) formData.append('image', eventForm[key]);
+                else if (eventForm[key]) formData.append(key, eventForm[key]);
+            });
+
+            await api.post('/pa/event', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert('Event submitted for verification!');
-            setEventForm({ date: '', time: '', location: '', category: '', description: '' });
+            setEventForm({ date: '', time: '', location: '', category: '', description: '', image: null });
             fetchEvents();
         } catch (err) { alert('Failed to submit event'); }
     };
@@ -639,6 +663,10 @@ const PADashboard = () => {
                                     <label style={styles.label}>Budget Allocation</label>
                                     <input type="number" style={styles.input} value={projectForm.fundsAllocated} onChange={e => setProjectForm({ ...projectForm, fundsAllocated: e.target.value })} required />
                                 </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Project Image</label>
+                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setProjectForm)} />
+                                </div>
                                 <Button type="submit">Create Project</Button>
                             </form>
                         </Card>
@@ -648,6 +676,7 @@ const PADashboard = () => {
                             <div style={{ display: 'grid', gap: '1rem' }}>
                                 {projects.map(p => (
                                     <Card key={p._id} title={p.title}>
+                                        {p.imageUrl && <img src={`${SERVER_URL}${p.imageUrl}`} alt={p.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                         <div style={{ marginBottom: '1rem' }}>
                                             <span style={{
                                                 padding: '4px 8px',
@@ -698,6 +727,10 @@ const PADashboard = () => {
                                     <label style={styles.label}>Description</label>
                                     <textarea style={styles.input} value={schemeForm.description} onChange={e => setSchemeForm({ ...schemeForm, description: e.target.value })} required />
                                 </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Scheme Image</label>
+                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setSchemeForm)} />
+                                </div>
                                 <Button type="submit">Submit Scheme</Button>
                             </form>
                         </Card>
@@ -707,6 +740,7 @@ const PADashboard = () => {
                             <div style={{ display: 'grid', gap: '1rem' }}>
                                 {schemes.map(s => (
                                     <Card key={s._id} title={s.category}>
+                                        {s.imageUrl && <img src={`${SERVER_URL}${s.imageUrl}`} alt={s.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                         <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(s.date).toLocaleDateString()} | {s.time} | {s.location}</p>
                                         <p>{s.description}</p>
                                         <div>
@@ -755,6 +789,10 @@ const PADashboard = () => {
                                     <label style={styles.label}>Description</label>
                                     <textarea style={styles.input} value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} required />
                                 </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Event Image</label>
+                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setEventForm)} />
+                                </div>
                                 <Button type="submit">Submit Event</Button>
                             </form>
                         </Card>
@@ -764,6 +802,7 @@ const PADashboard = () => {
                             <div style={{ display: 'grid', gap: '1rem' }}>
                                 {events.map(ev => (
                                     <Card key={ev._id} title={ev.category}>
+                                        {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                         <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(ev.date).toLocaleDateString()} | {ev.time} | {ev.location}</p>
                                         <p>{ev.description}</p>
                                         <div>
@@ -791,7 +830,9 @@ const PADashboard = () => {
                         <h3>Complaint Management</h3>
                         {complaints.map(c => (
                             <div key={c._id} className="card p-3 mb-3">
+
                                 <h4>{c.title}</h4>
+                                {c.imageUrl && <img src={`${SERVER_URL}${c.imageUrl}`} alt="Complaint" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                 <p>{c.description}</p>
                                 <p>Status: <strong>{c.status}</strong></p>
                                 {c.adminResponse && <p>Admin: {c.adminResponse}</p>}

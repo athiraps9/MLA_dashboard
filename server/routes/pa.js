@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const Attendance = require('../models/Attendance');
 const Season = require('../models/Season');
 const Schedule = require('../models/Schedule');
@@ -117,7 +118,7 @@ router.get('/projects', auth(), ensurePA, async (req, res) => {
 });
 
 // POST /pa/project - Create a new project
-router.post('/project', auth(), ensurePA, async (req, res) => {
+router.post('/project', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
         const { title, description, fundsAllocated, startDate, endDate, mlaId } = req.body;
         const project = new Project({
@@ -138,11 +139,15 @@ router.post('/project', auth(), ensurePA, async (req, res) => {
 });
 
 // PUT /pa/project/:id - Update project status/details
-router.put('/project/:id', auth(), ensurePA, async (req, res) => {
+router.put('/project/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
+        const updateData = { ...req.body };
+        if (req.file) {
+            updateData.imageUrl = `/uploads/${req.file.filename}`;
+        }
         const project = await Project.findByIdAndUpdate(
             req.params.id, 
-            { $set: req.body },
+            { $set: updateData },
             { new: true }
         );
         res.json(project);
@@ -204,7 +209,7 @@ router.get('/schemes', auth(), ensurePA, async (req, res) => {
 });
 
 // POST /pa/scheme
-router.post('/scheme', auth(), ensurePA, async (req, res) => {
+router.post('/scheme', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
         const { date, time, location, category, description } = req.body;
         const scheme = new Scheme({
@@ -225,11 +230,15 @@ router.post('/scheme', auth(), ensurePA, async (req, res) => {
 });
 
 // PUT /pa/scheme/:id
-router.put('/scheme/:id', auth(), ensurePA, async (req, res) => {
+router.put('/scheme/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
+        const updateData = { ...req.body };
+        if (req.file) {
+            updateData.imageUrl = `/uploads/${req.file.filename}`;
+        }
         const scheme = await Scheme.findOneAndUpdate(
             { _id: req.params.id, pa: req.user.id, status: 'pending' },
-            { $set: req.body },
+            { $set: updateData },
             { new: true }
         );
         if (!scheme) return res.status(404).json({ message: 'Scheme not found or cannot be edited' });
@@ -254,7 +263,7 @@ router.get('/events', auth(), ensurePA, async (req, res) => {
 });
 
 // POST /pa/event
-router.post('/event', auth(), ensurePA, async (req, res) => {
+router.post('/event', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
         const { date, time, location, category, description } = req.body;
         const event = new Event({
@@ -275,11 +284,15 @@ router.post('/event', auth(), ensurePA, async (req, res) => {
 });
 
 // PUT /pa/event/:id
-router.put('/event/:id', auth(), ensurePA, async (req, res) => {
+router.put('/event/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
+        const updateData = { ...req.body };
+        if (req.file) {
+            updateData.imageUrl = `/uploads/${req.file.filename}`;
+        }
         const event = await Event.findOneAndUpdate(
             { _id: req.params.id, pa: req.user.id, status: 'pending' },
-            { $set: req.body },
+            { $set: updateData },
             { new: true }
         );
         if (!event) return res.status(404).json({ message: 'Event not found or cannot be edited' });

@@ -30,7 +30,12 @@ const UserDashboard = () => {
     const location = useLocation();
 
     // Complaint Form
-    const [complaintForm, setComplaintForm] = useState({ title: '', description: '' });
+    const [complaintForm, setComplaintForm] = useState({ title: '', description: '', image: null });
+
+    // Helper for file change
+    const handleFileChange = (e, setForm, fieldName = 'image') => {
+        setForm(prev => ({ ...prev, [fieldName]: e.target.files[0] }));
+    };
 
 
     // Profile State
@@ -110,9 +115,15 @@ const UserDashboard = () => {
     const handleComplaintSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/complaints', complaintForm);
+            const formData = new FormData();
+            Object.keys(complaintForm).forEach(key => {
+                if (key === 'image' && complaintForm[key]) formData.append('image', complaintForm[key]);
+                else if (complaintForm[key]) formData.append(key, complaintForm[key]);
+            });
+
+            await api.post('/complaints', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert('Complaint Submitted');
-            setComplaintForm({ title: '', description: '' });
+            setComplaintForm({ title: '', description: '', image: null });
             fetchUserData();
         } catch (err) {
             alert('Failed to submit');
@@ -388,6 +399,7 @@ const UserDashboard = () => {
                             <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
                                 {projects.map(p => (
                                     <Card key={p._id} title={p.title}>
+                                        {p.imageUrl && <img src={`${SERVER_URL}${p.imageUrl}`} alt={p.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                         <p>{p.description}</p>
                                         <p><strong>Status:</strong> {p.status}</p>
                                         <p><strong>Invested:</strong> ₹{p.fundsAllocated?.toLocaleString()}</p>
@@ -420,6 +432,7 @@ const UserDashboard = () => {
                             <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
                                 {schemes.length === 0 ? <p>No active schemes at the moment.</p> : schemes.map(s => (
                                     <Card key={s._id} title={s.category}>
+                                        {s.imageUrl && <img src={`${SERVER_URL}${s.imageUrl}`} alt={s.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                         <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(s.date).toLocaleDateString()} | {s.time} | {s.location}</p>
                                         <p>{s.description}</p>
                                         <p style={{ fontSize: '0.8rem', color: '#999' }}>Verified by Authority</p>
@@ -452,6 +465,7 @@ const UserDashboard = () => {
                             <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
                                 {events.length === 0 ? <p>No upcoming events at the moment.</p> : events.map(ev => (
                                     <Card key={ev._id} title={ev.category}>
+                                        {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
                                         <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(ev.date).toLocaleDateString()} | {ev.time} | {ev.location}</p>
                                         <p>{ev.description}</p>
                                         <p style={{ fontSize: '0.8rem', color: '#999' }}>Verified by Authority</p>
@@ -485,6 +499,7 @@ const UserDashboard = () => {
                                 <form onSubmit={handleComplaintSubmit} style={{ display: 'grid', gap: '15px' }}>
                                     <input placeholder="Title" value={complaintForm.title} onChange={e => setComplaintForm({ ...complaintForm, title: e.target.value })} required style={{ padding: '10px' }} />
                                     <textarea placeholder="Description" value={complaintForm.description} onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })} required style={{ padding: '10px', height: '100px' }} />
+                                    <input type="file" accept="image/*" onChange={e => handleFileChange(e, setComplaintForm)} style={{ padding: '10px' }} />
                                     <Button type="submit">Submit Complaint</Button>
                                 </form>
                             </Card>
@@ -496,6 +511,7 @@ const UserDashboard = () => {
                                             <h4>{c.title}</h4>
                                             <span className={`badge badge-${c.status === 'Resolved' ? 'success' : 'warning'}`}>{c.status}</span>
                                         </div>
+                                        {c.imageUrl && <img src={`${SERVER_URL}${c.imageUrl}`} alt="Complaint" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }} />}
                                         <p>{c.description}</p>
                                         {c.adminResponse && <div className="bg-light p-2 mt-2"><strong>Response:</strong> {c.adminResponse}</div>}
                                     </div>
@@ -636,8 +652,8 @@ const UserDashboard = () => {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

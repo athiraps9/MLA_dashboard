@@ -16,6 +16,7 @@ const ProjectSchema = new mongoose.Schema({
   startDate: { type: Date },
   endDate: { type: Date },
   supportingDocument: { type: String }, // URL or file path
+  imageUrl: { type: String },
   ratings: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     rating: { type: Number, min: 1, max: 5, required: true },

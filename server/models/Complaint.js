@@ -8,7 +8,8 @@ const ComplaintSchema = new mongoose.Schema({
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // PA assigned
   adminResponse: { type: String },
   paResponse: { type: String },
-  priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' }
+  priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+  imageUrl: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Complaint', ComplaintSchema);

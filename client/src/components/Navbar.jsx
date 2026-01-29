@@ -44,7 +44,8 @@ const Navbar = ({ user, onLogout }) => {
 
                 <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
                     <Link to="/" className="nav-link" style={{ color: '#333', fontWeight: '500' }}>{t('Home', 'ഹോം')}</Link>
-                    <Link to="/mla-directory" className="nav-link" style={{ color: '#333', fontWeight: '500' }}>{t('MLA Directory', 'എംഎൽഎ ഡയറക്ടറി')}</Link>
+                    {/* <Link to="/mla-directory" className="nav-link" style={{ color: '#333', fontWeight: '500' }}>{t('MLA Directory', 'എംഎൽഎ ഡയറക്ടറി')}</Link> */}
+
 
                     {/* Language Toggle */}
                     {/* <button
