@@ -207,6 +207,7 @@ const AdminDashboard = () => {
         try {
             const res = await api.get('/admin/attendance/all');
             setAllAttendance(res.data);
+            console.log("all attendance",res.data);
         } catch (err) {
             console.error(err);
         }
@@ -712,7 +713,7 @@ const AdminDashboard = () => {
                                 </div>
 
                                 {showSeasonForm && (
-                                    <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+                                    <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '24px',maxWidth:'600px' }}>
                                         <h4 style={{ margin: '0 0 20px 0', fontWeight: 700 }}>Create New Season</h4>
                                         <form onSubmit={handleCreateSeason} style={{ display: 'grid', gap: '15px', maxWidth: '600px' }}>
                                             <div>
@@ -761,48 +762,187 @@ const AdminDashboard = () => {
                                                 Create Season
                                             </button>
                                         </form>
+
+
                                     </div>
                                 )}
 
                                 {/* List of Seasons */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '15px', marginTop: '20px' }}>
-                                    {seasons.map(season => (
-                                        <div key={season._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                                            <h4 style={{ marginBottom: '10px', fontWeight: 700, color: '#1E1B4B' }}>{season.name}</h4>
-                                            <p style={{ fontSize: '0.9rem', color: '#64748B', margin: '8px 0' }}>
-                                                {new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()}
-                                            </p>
-                                            {season.description && (
-                                                <p style={{ fontSize: '0.85rem', marginTop: '10px', color: '#475569' }}>{season.description}</p>
-                                            )}
-                                            <span style={{
-                                                display: 'inline-block',
-                                                marginTop: '10px',
-                                                padding: '4px 10px',
-                                                borderRadius: '12px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 600,
-                                                backgroundColor: season.isActive ? '#d4edda' : '#f8d7da',
-                                                color: season.isActive ? '#155724' : '#721c24'
-                                            }}>
-                                                {season.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                    {seasons.length === 0 && (
-                                        <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748B', padding: '40px' }}>No seasons created yet. Click "Create Season" to add one.</p>
-                                    )}
-                                </div>
+                                <div>
+  {seasons.length === 0 ? (
+    <p>No season records found.</p>
+  ) : (
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        
+        <thead>
+          <tr style={{
+            backgroundColor: '#6366F1',
+            color: 'white',
+            textAlign: 'left'
+          }}>
+            <th style={{ padding: '16px' }}>Season</th>
+            <th style={{ padding: '16px' }}>Start Date</th>
+            <th style={{ padding: '16px' }}>End Date</th>
+            <th style={{ padding: '16px' }}>Description</th>
+            <th style={{ padding: '16px' }}>Status</th>
+            <th style={{ padding: '16px' }}>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {seasons.map(season => (
+            <tr key={season._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+              
+              <td style={{ padding: '16px', fontWeight: 600 }}>
+                {season.name}
+              </td>
+
+              <td style={{ padding: '16px' }}>
+                {new Date(season.startDate).toLocaleDateString()}
+              </td>
+
+              <td style={{ padding: '16px' }}>
+                {new Date(season.endDate).toLocaleDateString()}
+              </td>
+
+              <td style={{ padding: '16px' }}>
+                {season.description || '-'}
+              </td>
+
+              <td style={{ padding: '16px' }}>
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  backgroundColor: season.isActive ? '#d4edda' : '#f8d7da',
+                  color: season.isActive ? '#155724' : '#721c24'
+                }}>
+                  {season.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </td>
+
+              <td style={{ padding: '16px' }}>
+                <button style={{
+                  marginRight: '8px',
+                  padding: '6px 12px',
+                  backgroundColor: '#22C55E',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}>
+                  Edit
+                </button>
+
+                <button style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#EF4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}>
+                  Delete
+                </button>
+              </td>
+
+            </tr>
+          ))}
+        </tbody>
+
+      </table>
+    </div>
+  )}
+</div>
+
                             </div>
 
                             {/* All Attendance Records */}
                             <h3 style={{ marginTop: '40px', marginBottom: '20px', fontSize: '18px', fontWeight: 700, color: '#1E1B4B' }}>All Attendance Records</h3>
-                            <div style={{ marginBottom: '20px', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                            <div>
                                 {allAttendance.length === 0 ? (
                                     <p style={{ textAlign: 'center', color: '#64748B', padding: '20px' }}>No attendance records found.</p>
                                 ) : (
-                                    <div style={{ color: '#64748B' }}>AttendanceTree component would be rendered here with all attendance data</div>
-                                )}
+                                    
+                                        <div>
+  {allAttendance.length === 0 ? (
+    <p>No season records found.</p>
+  ) : (
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    }}>
+      {/* <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        
+        <thead>
+          <tr style={{
+            backgroundColor: '#4169E1',
+            color: 'white',
+            textAlign: 'left'
+          }}>
+            <th style={{ padding: '16px' }}>Session</th>
+            <th style={{ padding: '16px' }}> Date</th>
+            <th style={{ padding: '16px' }}>Status</th>
+            <th style={{ padding: '16px' }}>Remarks</th>
+          </tr>
+        </thead>
+
+         <tbody>
+          {allAttendance.map(attendance => (
+            <tr key={attendance._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <td>
+                    
+                {attendance.season}
+                </td>
+                <td>
+                    {attendance.date}
+                </td>
+                <td>
+                    {attendance.status}
+                </td>
+                <td>
+                    {attendance.remarks}
+                </td>
+              
+             
+
+              
+
+
+
+              <td style={{ padding: '16px' }}>
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                
+                }}>
+                
+                </span>
+              </td>
+
+            
+
+            </tr>
+          ))}
+        </tbody> 
+
+      </table> */}
+    </div>
+  )}
+</div>
+
+)}
                             </div>
 
                         </div>)

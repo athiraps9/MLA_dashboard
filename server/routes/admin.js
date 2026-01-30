@@ -96,6 +96,8 @@ router.get('/attendance/all', auth(['admin']), ensureAdmin, async (req, res) => 
             .sort({ 'season': 1, 'date': -1 });
 
         res.json(attendance);
+
+        console.log("...",attendance,"from all attendance");
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
