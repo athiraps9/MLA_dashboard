@@ -322,8 +322,8 @@ const AdminDashboard = () => {
             <aside style={{ width: '256px', height: '100vh', backgroundColor: '#FFFFFF', borderRight: '1px solid #E0E7FF', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'fixed' }}>
                 <div style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366F1' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '30px', fontWeight: 'bold' }}>account_balance</span>
-                        <span style={{ fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>LEGISTRA</span>
+                
+                       
                     </div>
                 </div>
                 <nav style={{ flex: 1, marginTop: '16px' }}>
