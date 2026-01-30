@@ -44,9 +44,11 @@ router.get('/dashboard', async (req, res) => {
 
 // ATTENDANCE ROUTES
 
+
 // POST /pa/attendance - Add daily attendance
 router.post('/attendance', auth(), ensurePA, async (req, res) => {
-    const { seasonId, date, status, remarks, mlaId } = req.body;
+    const { seasonId, date, status, remarks } = req.body;
+    console.log("im in attendance post",req.body)
     
     try {
         // Validate season exists
@@ -58,7 +60,6 @@ router.post('/attendance', auth(), ensurePA, async (req, res) => {
         // Check if attendance already exists for this date
         const existingAttendance = await Attendance.findOne({
             season: seasonId,
-            mla: mlaId,
             date: new Date(date)
         });
 
@@ -69,7 +70,6 @@ router.post('/attendance', auth(), ensurePA, async (req, res) => {
         // Create new attendance record
         const attendance = new Attendance({
             season: seasonId,
-            mla: mlaId,
             date,
             status,
             remarks
@@ -120,14 +120,13 @@ router.get('/projects', auth(), ensurePA, async (req, res) => {
 // POST /pa/project - Create a new project
 router.post('/project', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
-        const { title, description, fundsAllocated, startDate, endDate, mlaId } = req.body;
+        const { title, description, fundsAllocated, startDate, endDate } = req.body;
         const project = new Project({
             title,
             description,
             fundsAllocated,
             startDate,
             endDate,
-            mla: mlaId,
             status: 'pending'
         });
         await project.save();

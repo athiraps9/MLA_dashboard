@@ -224,15 +224,15 @@ const PADashboard = () => {
         e.preventDefault();
         try {
             // Get MLA ID - for demo, fetch first MLA
-            const mlaRes = await api.get('/mla-directory');
-            const mlaId = attendanceForm.mlaId || mlaRes.data[0]?._id;
+            // const mlaRes = await api.get('/mla-directory');
+            // const mlaId = attendanceForm.mlaId || mlaRes.data[0]?._id;
 
-            if (!mlaId) {
-                alert('No MLA found. Please ensure an MLA exists in the system.');
-                return;
-            }
+            // if (!mlaId) {
+            //     alert('No MLA found. Please ensure an MLA exists in the system.');
+            //     return;
+            // }
 
-            await api.post('/pa/attendance', { ...attendanceForm, mlaId });
+            await api.post('/pa/attendance', { ...attendanceForm });
             alert('Attendance added successfully!');
             setAttendanceForm({ seasonId: '', date: '', status: 'Present', remarks: '', mlaId: '' });
             fetchAttendance();
@@ -269,14 +269,14 @@ const PADashboard = () => {
             // Actually let's assume the user knows the MLA ID or we fetch it.
             // For now, let's use a simpler approach or fetch from directory
             const mlaRes2 = await api.get('/mla-directory');
-            const mlaId = projectForm.mlaId || mlaRes2.data[0]?._id;
+
 
             const formData = new FormData();
             Object.keys(projectForm).forEach(key => {
                 if (key === 'image' && projectForm[key]) formData.append('image', projectForm[key]);
                 else if (projectForm[key]) formData.append(key, projectForm[key]);
             });
-            formData.append('mlaId', mlaId);
+
 
             await api.post('/pa/project', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             alert('Project created!');

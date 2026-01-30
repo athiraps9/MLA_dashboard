@@ -249,6 +249,7 @@ router.get('/pending', auth(['admin']), ensureAdmin, async (req, res) => {
             .populate('season', 'name')
             .populate('mla', 'fullName')
             .sort({ date: -1 });
+            console.log("pending attendance",attendance);
 
         res.json({
             stats: {

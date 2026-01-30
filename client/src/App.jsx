@@ -6,7 +6,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import MLADashboard from './pages/MLADashboard';
 import LandingPage from './pages/LandingPage';
 import Signup from './pages/Signup';
-import MLADirectory from './pages/MLADirectory';
 import MLADetail from './pages/MLADetail';
 import Profile from './pages/Profile';
 import ComplaintPortal from './pages/ComplaintPortal';
@@ -83,8 +82,7 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
-              {/* <Route path="/mla-directory" element={<MLADirectory />} /> */}
-              {/* <Route path="/mla-directory/:id" element={<MLADetail />} /> */}
+
 
 
               <Route path="/profile" element={

@@ -42,6 +42,7 @@ const AdminDashboard = () => {
             const res = await api.get('/admin/pending');
             const projectsRes = await api.get('/admin/projects/pending');
             const schemesRes = await api.get('/admin/schemes/pending');
+            console.log(res.data,"im waiting ");
             const eventsRes = await api.get('/admin/events/pending');
             const pendingComplaints = await api.get('/complaints/all');
             setPending({
@@ -657,7 +658,7 @@ const AdminDashboard = () => {
                                                 <tr style={{ backgroundColor: '#6366F1', color: 'white', textAlign: 'left' }}>
                                                     <th style={{ padding: '16px' }}>Season</th>
                                                     <th style={{ padding: '16px' }}>Date</th>
-                                                    <th style={{ padding: '16px' }}>MLA</th>
+                                                    
                                                     <th style={{ padding: '16px' }}>Status</th>
                                                     <th style={{ padding: '16px' }}>Actions</th>
                                                 </tr>
@@ -665,9 +666,9 @@ const AdminDashboard = () => {
                                             <tbody>
                                                 {pending.attendance.map(a => (
                                                     <tr key={a._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                                        <td style={{ padding: '16px' }}>{a.season || 'N/A'}</td>
+                                                        <td style={{ padding: '16px' }}>{a.season.name || 'N/A'}</td>
                                                         <td style={{ padding: '16px' }}>{new Date(a.date).toLocaleDateString()}</td>
-                                                        <td style={{ padding: '16px' }}>{a.mlaName || 'MLA'}</td>
+                            
                                                         <td style={{ padding: '16px' }}>{a.present ? 'Present' : 'Absent'}</td>
                                                         <td style={{ padding: '16px' }}>
                                                             <button style={{ marginRight: '8px', padding: '6px 12px', backgroundColor: '#22C55E', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Verify</button>
@@ -675,7 +676,7 @@ const AdminDashboard = () => {
                                                         </td>
                                                     </tr>
                                                 ))}
-                                            </tbody>
+                                            </tbody> 
                                         </table>
                                     </div>
                                 )}
