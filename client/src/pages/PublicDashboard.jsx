@@ -89,15 +89,112 @@ const PublicDashboard = () => {
         </div>
     );
 
+
+    const styles = {
+        hero: {
+            background: 'linear-gradient(135deg, #023e8a 0%, #0077b6 100%)',
+            color: 'white',
+            padding: '140px 0 120px',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+            clipPath: 'polygon(0 0, 100% 0, 100% 90%, 0 100%)'
+        },
+        heroTitle: {
+            fontSize: '4rem',
+            fontWeight: '900',
+            marginBottom: '20px',
+            lineHeight: '1.2',
+            textShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        },
+        heroTagline: {
+            fontSize: '1.6rem',
+            fontWeight: '300',
+            marginBottom: '50px',
+            opacity: '0.95',
+            maxWidth: '700px',
+            margin: '0 auto 50px'
+        },
+        btnRound: {
+            borderRadius: '50px',
+            padding: '18px 45px',
+            border: 'none',
+            fontSize: '1.1rem',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            fontWeight: '700',
+            boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
+        },
+        section: {
+            padding: '100px 0',
+            position: 'relative'
+        },
+        card: {
+            background: 'white',
+            borderRadius: '20px',
+            padding: '40px 30px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
+            textAlign: 'center',
+            height: '100%',
+            transition: 'transform 0.3s ease',
+            border: '1px solid rgba(0,0,0,0.05)'
+        },
+        stepCircle: {
+            width: '70px', height: '70px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #0077b6, #00b4d8)',
+            color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.8rem', margin: '0 auto 25px', fontWeight: 'bold',
+            boxShadow: '0 10px 20px rgba(0,180,216,0.3)'
+        },
+        statsRow: {
+            display: 'flex', justifyContent: 'center', gap: '50px', marginTop: '-80px', position: 'relative', zIndex: 10, flexWrap: 'wrap'
+        },
+        statCard: {
+            background: 'white', padding: '30px', borderRadius: '15px',
+            boxShadow: '0 15px 30px rgba(0,0,0,0.1)', textAlign: 'center', minWidth: '200px'
+        }
+    };
+
     return (
-        <div className="container section-padding">
-            <div style={{ margin: '0 0 2rem' }}>
-                <h1 style={{ fontSize: '2rem' }}>{t('Public Insight Dashboard', 'പൊതു വിവര ഡാഷ്ബോർഡ്')}</h1>
+        <div>
+
+         {/* Hero Section */}
+         
+            <header style={styles.hero}>
+                <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+                    <h1 style={styles.heroTitle}>Transforming Governance</h1>
+                    <p style={styles.heroTagline}>
+                        Experience the future of citizen-centric administration. <br />
+                        Professional. Transparent. Efficient.
+                    </p>
+                </div>
+            </header>
+
+            {/* Stats Overlay */}
+            {/* <div className="container" style={styles.statsRow}>
+                <div style={styles.statCard}>
+                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>{data?.stats?.averageAttendance || 0}%</h2>
+                    <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Attendance</p>
+                </div>
+                <div style={styles.statCard}>
+                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>₹{(data?.stats?.totalUtilized / 10000000).toFixed(1)}Cr+</h2>
+                    <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Funds Utilized</p>
+                </div>
+                <div style={styles.statCard}>
+                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>{data?.stats?.totalProjects || 0}+</h2>
+                    <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Projects Completed</p>
+                </div>
+            </div> */}
+
+            <div style={{ margin: '2px 2px 2rem ', textAlign:'center' }}>
+                <h1 style={{ fontSize: '2rem' }}>{t('Public Insight Dashboard')}</h1>
                 <p style={{ color: 'var(--text-muted)' }}>Overview of MLA activities and development projects.</p>
             </div>
 
+            <div style={{marginLeft:'20px',marginRight:'20px'}}>
             {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
                 <KPICard title="Total Projects" value={data.projects.length} subtext={`${recentProjects.length} new this month`} icon={FaProjectDiagram} color="#007bff" />
                 <KPICard title="Budget Utilized" value={`₹${(utilizedFunds / 100000).toFixed(1)}L`} subtext={`${utilizationPercentage}% Utilization`} icon={FaRupeeSign} color="#28a745" />
                 <KPICard title="Active MLAs" value={Object.keys(mlaFunds).length} icon={FaUsers} color="#fd7e14" />
@@ -105,13 +202,13 @@ const PublicDashboard = () => {
             </div>
 
             {/* Quick Links */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+            {/* <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <Link to="/mla-directory" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>View All MLAs <FaArrowRight size={12} /></Link>
                 <Link to="/profile" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>My Profile <FaArrowRight size={12} /></Link>
-            </div>
+            </div> */}
 
             {/* Charts Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
+            {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
                 <div className="card">
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>Fund Utilization Status</h3>
                     <div style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
@@ -124,10 +221,10 @@ const PublicDashboard = () => {
                         <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Recent Projects */}
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>{t('Recent Projects', 'പുതിയ പദ്ധതികൾ')}</h2>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem',marginTop:'1.5rem' }}>{t('Recent Projects', 'പുതിയ പദ്ധതികൾ')}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 {recentProjects.map(project => (
                     <div className="card" key={project._id} title={project.title}>
@@ -155,8 +252,8 @@ const PublicDashboard = () => {
                     ))}
                 </div>
             )}
-
-        </div>
+         </div>
+    </div>
     );
 };
 

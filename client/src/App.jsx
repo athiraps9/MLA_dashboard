@@ -17,6 +17,7 @@ import UserDashboard from './pages/UserDashboard'; // New
 import AdminProfile from './pages/AdminProfile'; // New
 import ForgotPassword from './pages/ForgotPassword'; // Password Reset
 import ResetPassword from './pages/ResetPassword'; // Password Reset
+import PublicDashboard from './pages/PublicDashboard';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -72,7 +73,7 @@ const App = () => {
               {/* Public User Dashboard */}
               <Route path="/user" element={
                 <ProtectedRoute role="public">
-                  <UserDashboard />
+                  <PublicDashboard />
                 </ProtectedRoute>
               } />
 
