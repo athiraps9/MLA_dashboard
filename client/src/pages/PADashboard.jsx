@@ -7,6 +7,7 @@ import AttendanceReport from "../components/AttendanceReport";
 import SimpleCalendar from "../components/SimpleCalendar";
 import ScheduleCard from "../components/ScheduleCard";
 import { SERVER_URL } from "../utils/api";
+import PaProfile from "./PaProfile";
 import {
   FaUserCircle,
   FaSave,
@@ -17,6 +18,7 @@ import {
 } from "react-icons/fa";
 import "../styles/variables.css";
 import { all } from "axios";
+
 
 const PADashboard = () => {
   const [stats, setStats] = useState({});
@@ -1246,6 +1248,330 @@ const PADashboard = () => {
                 </div>
               )}
             </div>
+          )}
+          {activeTab === "scheduling" && (
+            <div>
+                    <h2 style={{ marginBottom: '20px' }}>Schedule Management</h2>
+
+                    {/* Create Schedule Form */}
+                    <Card title="Create New Schedule">
+                        <form onSubmit={handleScheduleSubmit} style={{ display: 'grid', gap: '15px', maxWidth: '600px' }}>
+                            {admins.length > 0 && (
+                                <div style={{ padding: '10px', background: '#f0f4f8', borderRadius: '8px', border: '1px solid #d1d9e6', color: '#2d3748', fontSize: '0.9rem', fontWeight: '500' }}>
+                                    Schedule with: <strong>{admins[0].fullName}</strong>
+                                </div>
+                            )}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={scheduleForm.date}
+                                        onChange={e => {
+                                            setScheduleForm({ ...scheduleForm, date: e.target.value });
+                                            if (scheduleForm.adminId && e.target.value) {
+                                                checkAvailability(scheduleForm.adminId, e.target.value);
+                                            }
+                                        }}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Time</label>
+                                    <input
+                                        type="time"
+                                        className="form-control"
+                                        value={scheduleForm.time}
+                                        onChange={e => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Availability Indicator */}
+                            {availability && (
+                                <div style={{
+                                    padding: '10px',
+                                    borderRadius: '6px',
+                                    backgroundColor: availability.isAvailable ? '#d4edda' : '#f8d7da',
+                                    color: availability.isAvailable ? '#155724' : '#721c24',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {availability.isAvailable ? '✓ Admin is available on this date' : '✗ Admin has existing schedules on this date'}
+                                </div>
+                            )}
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Venue</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={scheduleForm.venue}
+                                    onChange={e => setScheduleForm({ ...scheduleForm, venue: e.target.value })}
+                                    required
+                                    placeholder="e.g., Assembly Hall"
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Schedule Type</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={scheduleForm.scheduleType}
+                                    onChange={e => setScheduleForm({ ...scheduleForm, scheduleType: e.target.value })}
+                                    required
+                                    placeholder="e.g., Meeting, Event, Session"
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Description</label>
+                                <textarea
+                                    className="form-control"
+                                    value={scheduleForm.description}
+                                    onChange={e => setScheduleForm({ ...scheduleForm, description: e.target.value })}
+                                    rows="3"
+                                    placeholder="Optional description"
+                                />
+                            </div>
+                            <Button type="submit">Create Schedule</Button>
+                        </form>
+                    </Card>
+
+                    {/* Calendar View */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>Calendar View</h3>
+                    <SimpleCalendar
+                        schedules={schedules}
+                        busyDates={busyDates}
+                        onDateClick={(date) => {
+                            setSelectedDate(date);
+                            const formattedDate = date.toISOString().split('T')[0];
+                            setScheduleForm(prev => ({ ...prev, date: formattedDate }));
+                            if (scheduleForm.adminId) {
+                                checkAvailability(scheduleForm.adminId, formattedDate);
+                            }
+                        }}
+                    />
+
+                    {/* My Schedules */}
+                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>My Schedules</h3>
+                    {schedules.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No schedules created yet.</p>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                            {schedules.map(schedule => (
+                                <ScheduleCard key={schedule._id} schedule={schedule} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+          )}
+          {activeTab === "projects" && (
+            <div style={{ display: 'grid', gap: '2rem' }}>
+                        <Card title="Create New Project">
+                            <form onSubmit={handleProjectSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Title</label>
+                                    <input style={styles.input} value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description</label>
+                                    <textarea style={styles.input} value={projectForm.description} onChange={e => setProjectForm({ ...projectForm, description: e.target.value })} required />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Start Date</label>
+                                        <input type="date" style={styles.input} value={projectForm.startDate} onChange={e => setProjectForm({ ...projectForm, startDate: e.target.value })} required />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>End Date</label>
+                                        <input type="date" style={styles.input} value={projectForm.endDate} onChange={e => setProjectForm({ ...projectForm, endDate: e.target.value })} required />
+                                    </div>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Budget Allocation</label>
+                                    <input type="number" style={styles.input} value={projectForm.fundsAllocated} onChange={e => setProjectForm({ ...projectForm, fundsAllocated: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Project Image</label>
+                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setProjectForm)} />
+                                </div>
+                                <Button type="submit">Create Project</Button>
+                            </form>
+                        </Card>
+
+                        <div>
+                            <h3>Project Status Management</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {projects.map(p => (
+                                    <Card key={p._id} title={p.title}>
+                                        {p.imageUrl && <img src={`${SERVER_URL}${p.imageUrl}`} alt={p.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
+                                        <div style={{ marginBottom: '1rem' }}>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.8rem',
+                                                background: p.status === 'approved' ? '#C6F6D5' : p.status === 'pending' ? '#FEEBC8' : '#FED7D7',
+                                                color: p.status === 'approved' ? '#22543D' : p.status === 'pending' ? '#744210' : '#822727'
+                                            }}>
+                                                {p.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <Button variant="outline" size="small" onClick={() => handleProjectUpdate(p._id, 'in-progress')}>Mark In Progress</Button>
+                                            <Button variant="outline" size="small" onClick={() => handleProjectUpdate(p._id, 'completed')}>Mark Completed</Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+          )}
+
+          {activeTab === "schemes" && (
+            <div style={{ display: 'grid', gap: '2rem' }}>
+                        <Card title="Submit New Scheme">
+                            <form onSubmit={handleSchemeSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Date</label>
+                                        <input type="date" style={styles.input} value={schemeForm.date} onChange={e => setSchemeForm({ ...schemeForm, date: e.target.value })} required />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Time</label>
+                                        <input type="time" style={styles.input} value={schemeForm.time} onChange={e => setSchemeForm({ ...schemeForm, time: e.target.value })} required />
+                                    </div>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Location</label>
+                                    <input style={styles.input} value={schemeForm.location} onChange={e => setSchemeForm({ ...schemeForm, location: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Category</label>
+                                    <input style={styles.input} value={schemeForm.category} onChange={e => setSchemeForm({ ...schemeForm, category: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description</label>
+                                    <textarea style={styles.input} value={schemeForm.description} onChange={e => setSchemeForm({ ...schemeForm, description: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Scheme Image</label>
+                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setSchemeForm)} />
+                                </div>
+                                <Button type="submit">Submit Scheme</Button>
+                            </form>
+                        </Card>
+
+                        <div>
+                            <h3>Submitted Schemes</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {schemes.map(s => (
+                                    <Card key={s._id} title={s.category}>
+                                        {s.imageUrl && <img src={`${SERVER_URL}${s.imageUrl}`} alt={s.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
+                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(s.date).toLocaleDateString()} | {s.time} | {s.location}</p>
+                                        <p>{s.description}</p>
+                                        <div>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.8rem',
+                                                background: s.status === 'approved' ? '#C6F6D5' : s.status === 'pending' ? '#FEEBC8' : '#FED7D7',
+                                                color: s.status === 'approved' ? '#22543D' : s.status === 'pending' ? '#744210' : '#822727'
+                                            }}>
+                                                {s.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+          )}
+
+          {activeTab === "events" && (
+            <div style={{ display: 'grid', gap: '2rem' }}>
+                        <Card title="Submit New Event">
+                            <form onSubmit={handleEventSubmit} style={{ display: 'grid', gap: '15px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Date</label>
+                                        <input type="date" style={styles.input} value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} required />
+                                    </div>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Time</label>
+                                        <input type="time" style={styles.input} value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} required />
+                                    </div>
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Location</label>
+                                    <input style={styles.input} value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Category</label>
+                                    <input style={styles.input} value={eventForm.category} onChange={e => setEventForm({ ...eventForm, category: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description</label>
+                                    <textarea style={styles.input} value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Event Image</label>
+                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setEventForm)} />
+                                </div>
+                                <Button type="submit">Submit Event</Button>
+                            </form>
+                        </Card>
+
+                        <div>
+                            <h3>Submitted Events</h3>
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {events.map(ev => (
+                                    <Card key={ev._id} title={ev.category}>
+                                        {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
+                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(ev.date).toLocaleDateString()} | {ev.time} | {ev.location}</p>
+                                        <p>{ev.description}</p>
+                                        <div>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.8rem',
+                                                background: ev.status === 'approved' ? '#C6F6D5' : ev.status === 'pending' ? '#FEEBC8' : '#FED7D7',
+                                                color: ev.status === 'approved' ? '#22543D' : ev.status === 'pending' ? '#744210' : '#822727'
+                                            }}>
+                                                {ev.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+          )}
+
+          {activeTab === "complaints" && (
+            <div>
+                        <h3>Complaint Management</h3>
+                        {complaints.map(c => (
+                            <div key={c._id} className="card p-3 mb-3">
+
+                                <h4>{c.title}</h4>
+                                {c.imageUrl && <img src={`${SERVER_URL}${c.imageUrl}`} alt="Complaint" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
+                                <p>{c.description}</p>
+                                <p>Status: <strong>{c.status}</strong></p>
+                                {c.adminResponse && <p>Admin: {c.adminResponse}</p>}
+                                <div className="flex gap-2">
+                                    <Button onClick={() => handleComplaintUpdate(c._id, 'In Progress', prompt('Enter update:'))}>Update Status</Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+          )}
+
+          {activeTab === "profile" && (
+            <div>
+                <PaProfile/>
+            </div>
+            
           )}
         </div>
       </main>
