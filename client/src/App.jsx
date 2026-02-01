@@ -117,9 +117,9 @@ const App = () => {
               <Route path="/mla-portal" element={<Navigate to="/admin" />} />
             </Routes>
           </div>
-          <Footer />
+          {/* <Footer role="public" /> */}
         </div>
-        <Chatbot />
+        {/* <Chatbot /> */}
       </BrowserRouter>
     </LanguageProvider>
   );

@@ -543,15 +543,14 @@ const AdminDashboard = () => {
                                 <span style={{ color: '#6366F1' }}>{getTabTitle()}</span>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                             <button style={{ padding: '10px', color: '#64748B', border: 'none', background: 'none', cursor: 'pointer', position: 'relative', borderRadius: '50%' }}>
-                                <span className="material-symbols-outlined">notifications</span>
-                                <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#EF4444', borderRadius: '50%', border: '2px solid #FFFFFF' }}></span>
+                                 {/ *  <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#EF4444', borderRadius: '50%', border: '2px solid #FFFFFF' }}></span> * /}
                             </button>
-                            <div style={{ height: '44px', width: '44px', borderRadius: '50%', backgroundColor: '#6366F1', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', boxShadow: '0 10px 15px -3px rgba(99, 102, 241, 0.2)', textTransform: 'uppercase' }}>
+                             <div style={{ height: '44px', width: '44px', borderRadius: '50%', backgroundColor: '#6366F1', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', boxShadow: '0 10px 15px -3px rgba(99, 102, 241, 0.2)', textTransform: 'uppercase' }}>
                                 AD
-                            </div>
-                        </div>
+                            </div> 
+                        </div> */}
                     </div>
                 </header>
 
@@ -881,7 +880,7 @@ const AdminDashboard = () => {
       overflow: 'hidden',
       boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }}>
-      {/* <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         
         <thead>
           <tr style={{
@@ -898,46 +897,26 @@ const AdminDashboard = () => {
 
          <tbody>
           {allAttendance.map(attendance => (
-            <tr key={attendance._id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                <td>
+            <tr key={attendance._id} style={{ borderBottom: '2px solid #F1F5F9',}}>
+                 <td style={{padding:"16px"}}>
                     
-                {attendance.season}
+                {attendance.season.name}
+                </td> 
+                <td style={{padding:"16px"}}>
+                    {new Date(attendance.date).toLocaleDateString()}
                 </td>
-                <td>
-                    {attendance.date}
-                </td>
-                <td>
+                <td style={{padding:"16px"}}>
                     {attendance.status}
                 </td>
-                <td>
+                <td style={{padding:"16px"}}>
                     {attendance.remarks}
                 </td>
-              
-             
-
-              
-
-
-
-              <td style={{ padding: '16px' }}>
-                <span style={{
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                
-                }}>
-                
-                </span>
-              </td>
-
-            
 
             </tr>
           ))}
         </tbody> 
 
-      </table> */}
+      </table> 
     </div>
   )}
 </div>

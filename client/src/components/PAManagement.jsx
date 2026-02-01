@@ -13,6 +13,8 @@ const PAManagement = () => {
         try {
             const res = await api.get('/auth/pas');
             setPas(res.data);
+            console.log(res.data);
+
         } catch (err) {
             console.error(err);
         } finally {

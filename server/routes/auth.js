@@ -137,7 +137,7 @@ router.post('/create-pa', async (req, res) => {
 });
 
 // Get All PAs (Admin Only)
-router.get('/pas', auth, async (req, res) => {
+router.get('/pas', auth(), async (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'mla') {
         return res.status(403).json({ message: 'Access denied' });
     }

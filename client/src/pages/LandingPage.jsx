@@ -6,6 +6,7 @@ import {
     FaUsers, FaChartLine, FaCheckCircle, FaProjectDiagram, FaArrowRight
 } from 'react-icons/fa';
 import { useLanguage } from '../context/LanguageContext';
+import Footer from '../components/Footer';
 
 const LandingPage = () => {
     const [data, setData] = useState(null);
@@ -196,6 +197,7 @@ const LandingPage = () => {
                     </div>
                 </div>
             </section>
+            <Footer/>
         </div>
     );
 };
