@@ -10,6 +10,8 @@ const Scheme = require('../models/Scheme');
 const Event = require('../models/Event');
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
+const fs = require('fs');
+const path = require('path');
 
 // Middleware to ensure user is a PA or Admin
 const ensurePA = (req, res, next) => {
@@ -255,6 +257,7 @@ router.get('/events', auth(), ensurePA, async (req, res) => {
     try {
         const events = await Event.find({ pa: req.user.id }).sort({ createdAt: -1 });
         res.json(events);
+        console.log("line number 258",events);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -262,9 +265,12 @@ router.get('/events', auth(), ensurePA, async (req, res) => {
 });
 
 // POST /pa/event
+// POST /pa/event
 router.post('/event', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
         const { date, time, location, category, description } = req.body;
+        
+        // Create event first without image
         const event = new Event({
             date,
             time,
@@ -274,14 +280,35 @@ router.post('/event', auth(), ensurePA, upload.single('image'), async (req, res)
             pa: req.user.id,
             status: 'pending'
         });
+        
         await event.save();
+        
+        // Handle image upload if present
+        if (req.file) {
+            
+            
+            // Get file extension from original file
+            const fileExtension = path.extname(req.file.originalname);
+            
+            // Create new filename using event ID
+            const newFilename = `${event._id}${fileExtension}`;
+            const oldPath = req.file.path;
+            const newPath = path.join(path.dirname(oldPath), newFilename);
+            
+            // Rename the file
+            fs.renameSync(oldPath, newPath);
+            
+            // Update event with image URL
+            event.imageUrl = `/uploads/${newFilename}`;
+            await event.save();
+        }
+        
         res.json(event);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 // PUT /pa/event/:id
 router.put('/event/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {

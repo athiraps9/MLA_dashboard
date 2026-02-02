@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import api from "../utils/api";
 import Card from "../components/Card";
 import Button from "../components/Button";
@@ -8,6 +8,7 @@ import SimpleCalendar from "../components/SimpleCalendar";
 import ScheduleCard from "../components/ScheduleCard";
 import { SERVER_URL } from "../utils/api";
 import PaProfile from "./PaProfile";
+
 import {
   FaUserCircle,
   FaSave,
@@ -24,6 +25,8 @@ const PADashboard = () => {
   const [stats, setStats] = useState({});
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef(null);
+
 
   // Attendance State
   const [seasons, setSeasons] = useState([]);
@@ -428,7 +431,13 @@ const PADashboard = () => {
         description: "",
         image: null,
       });
+
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
       fetchEvents();
+      
     } catch (err) {
       alert("Failed to submit event");
     }
@@ -1516,7 +1525,7 @@ const PADashboard = () => {
                                 </div>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Event Image</label>
-                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setEventForm)} />
+                                    <input type="file" accept="image/*" style={styles.input} ref={fileInputRef} onChange={e => handleFileChange(e, setEventForm)} />
                                 </div>
                                 <Button type="submit">Submit Event</Button>
                             </form>

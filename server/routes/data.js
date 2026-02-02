@@ -9,6 +9,7 @@ const Schedule = require('../models/Schedule');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 
+
 // --- PUBLIC ROUTES ---
 
 // Get Public Dashboard Data (Approved Projects & Verified Attendance)
@@ -215,5 +216,153 @@ router.post('/public/:type/:id/rate', auth(['citizen', 'public', 'admin', 'mla',
     res.status(500).json({ message: err.message });
   }
 });
+
+
+
+
+/* ALL EVENTS */
+/* http://localhost:5000/api/data/allevents */
+router.get('/allevents', async (req, res) => {
+  try {
+    const events = await Event.find({}).sort({ date: -1 });
+    res.json(events);
+    console.log("line number 225 data all events", events);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* TOP 3 EVENTS */
+/* http://localhost:5000/api/data/events */
+router.get('/events', async (req, res) => {
+  try {
+    const events = await Event.find({})
+      .sort({ date: -1 })
+      .limit(3);
+    
+    res.json(events);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* ALL SCHEDULES */
+/* http://localhost:5000/api/data/allschedules */
+router.get('/allschedules', async (req, res) => {
+  try {
+    const schedules = await Schedule.find({}).sort({ date: -1 });
+    res.json(schedules);
+    console.log("data all schedules", schedules);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* TOP 3 SCHEDULES */
+/* http://localhost:5000/api/data/schedules */
+router.get('/schedules', async (req, res) => {
+  try {
+    const schedules = await Schedule.find({})
+      .sort({ date: -1 })
+      .limit(3);
+    
+    res.json(schedules);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* ALL PROJECTS */
+/* http://localhost:5000/api/data/allprojects */
+router.get('/allprojects', async (req, res) => {
+  try {
+    const projects = await Project.find({}).sort({ date: -1 });
+    res.json(projects);
+    console.log("data all projects", projects);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* TOP 3 PROJECTS */
+/* http://localhost:5000/api/data/projects */
+router.get('/projects', async (req, res) => {
+  try {
+    const projects = await Project.find({})
+      .sort({ date: -1 })
+      .limit(3);
+    
+    res.json(projects);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* ALL SCHEMES */
+/* http://localhost:5000/api/data/allschemes */
+router.get('/allschemes', async (req, res) => {
+  try {
+    const schemes = await Scheme.find({}).sort({ date: -1 });
+    res.json(schemes);
+    console.log("data all schemes", schemes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* TOP 3 SCHEMES */
+/* http://localhost:5000/api/data/schemes */
+router.get('/schemes', async (req, res) => {
+  try {
+    const schemes = await Scheme.find({})
+      .sort({ date: -1 })
+      .limit(3);
+    
+    res.json(schemes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* ALL ATTENDANCE */
+/* http://localhost:5000/api/data/allattendance */
+router.get('/allattendance', async (req, res) => {
+  try {
+    const attendance = await Attendance.find({}).sort({ date: -1 });
+    res.json(attendance);
+    console.log("data all attendance", attendance);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* TOP 3 ATTENDANCE */
+/* http://localhost:5000/api/data/attendance */
+router.get('/attendance', async (req, res) => {
+  try {
+    const attendance = await Attendance.find({})
+      .sort({ date: -1 })
+      .limit(3);
+    
+    res.json(attendance);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+
+
 
 module.exports = router;

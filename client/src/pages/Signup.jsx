@@ -621,46 +621,54 @@ const Signup = ({ onLogin }) => {
                             <span>Location Details</span>
                         </div>
                         <div style={styles.grid}>
-                            <div style={styles.constituencyContainer}>
-                                <label style={styles.label}>Constituency *</label>
-                                <div style={{ position: 'relative' }}>
-                                    <FaSearch style={styles.searchIcon} />
-                                    <input
-                                        type="text"
-                                        placeholder="Search constituency..."
-                                        value={searchTerm || formData.constituency}
-                                        onChange={(e) => {
-                                            setSearchTerm(e.target.value);
-                                            setShowConstituencyList(true);
-                                        }}
-                                        onFocus={() => setShowConstituencyList(true)}
-                                        style={{ ...styles.input, paddingLeft: '40px' }}
-                                    />
-                                    {showConstituencyList && (
-                                        <div style={styles.dropdown}>
-                                            {filteredConstituencies.length > 0 ? (
-                                                filteredConstituencies.map(c => (
-                                                    <div
-                                                        key={c}
-                                                        style={styles.dropdownItem}
-                                                        onClick={() => {
-                                                            setFormData(p => ({ ...p, constituency: c }));
-                                                            setSearchTerm(c);
-                                                            setShowConstituencyList(false);
-                                                        }}
-                                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
-                                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                                    >
-                                                        {c}
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div style={{ ...styles.dropdownItem, color: '#94a3b8' }}>No results found</div>
-                                            )}
-                                        </div>
-                                    )}
+                             <div style={styles.constituencyContainer}>
+            <label style={styles.label}>Constituency *</label>
+            <div style={{ position: 'relative' }}>
+                <FaSearch style={styles.searchIcon} />
+                <input
+                    type="text"
+                    placeholder="Search constituency..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setSearchTerm(value);
+                        setFormData(p => ({ ...p, constituency: value }));
+                        setShowConstituencyList(true);
+                    }}
+                    onFocus={() => setShowConstituencyList(true)}
+                    onBlur={() => {
+                        // Delay to allow click on dropdown item
+                        setTimeout(() => setShowConstituencyList(false), 200);
+                    }}
+                    style={{ ...styles.input, paddingLeft: '40px' }}
+                />
+                {showConstituencyList && (
+                    <div style={styles.dropdown}>
+                        {filteredConstituencies.length > 0 ? (
+                            filteredConstituencies.map(c => (
+                                <div
+                                    key={c}
+                                    style={styles.dropdownItem}
+                                    onClick={() => {
+                                        setFormData(p => ({ ...p, constituency: c }));
+                                        setSearchTerm(c);
+                                        setShowConstituencyList(false);
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    {c}
                                 </div>
+                            ))
+                        ) : (
+                            <div style={{ ...styles.dropdownItem, color: '#94a3b8' }}>
+                                No results found
                             </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
                             <div style={{ ...styles.inputGroup, gridColumn: '2 / 3' }}>
                                 <label style={styles.label}>Address</label>
                                 <textarea
