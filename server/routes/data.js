@@ -15,7 +15,8 @@ const User = require('../models/User');
 router.get('/public/dashboard', async (req, res) => {
   try {
     console.log('Fetching public dashboard data...');
-    const projects = await Project.find({ status: 'approved' }).populate('mla', 'fullName district');
+    //const projects = await Project.find({ status: 'approved' }).populate('mla', 'fullName district');
+    const projects = await Project.find({ status: ['approved','pending',  'in-progress', 'completed'] });
     const schemes = await Scheme.find({ status: 'approved' }).populate('pa', 'fullName');
     const events = await Event.find({ status: 'approved' }).populate('pa', 'fullName');
 

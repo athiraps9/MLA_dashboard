@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const ProjectSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  mla: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   fundsAllocated: { type: Number, required: true },
   fundsUtilized: { type: Number, default: 0 },
   status: { type: String, enum: ['pending', 'approved', 'rejected', 'in-progress', 'completed'], default: 'pending' },

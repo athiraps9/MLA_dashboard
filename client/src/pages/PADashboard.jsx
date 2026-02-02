@@ -347,11 +347,11 @@ const PADashboard = () => {
   const handleProjectSubmit = async (e) => {
     e.preventDefault();
     try {
-      const mlaRes = await api.get("/pa/admins"); // Reusing to find a user, or wait, mla-directory?
+       // Reusing to find a user, or wait, mla-directory?
       // Actually let's assume the user knows the MLA ID or we fetch it.
       // For now, let's use a simpler approach or fetch from directory
-      const mlaRes2 = await api.get("/mla-directory");
-
+      
+      
       const formData = new FormData();
       Object.keys(projectForm).forEach((key) => {
         if (key === "image" && projectForm[key])
