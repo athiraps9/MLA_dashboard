@@ -30,6 +30,14 @@ const AdminDashboard = () => {
     const [todaySchedules, setTodaySchedules] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
     const [allContent, setAllContent] = useState({ projects: [], schemes: [], events: [] });
+     const [events, setEvents] = useState([]);
+    
+   const [showAllEvents, setShowAllEvents] = useState(false);
+    const displayedEvents = showAllEvents
+  ? allContent.events
+  : allContent.events.slice(0, 2);
+
+    
 
     // State for pending items
 
@@ -67,7 +75,7 @@ const AdminDashboard = () => {
             setAllContent({
                 projects: projectsRes.data,
                 schemes: schemesRes.data,
-                events: eventsRes.data
+                events: eventsRes.data.data || eventsRes.data || [],
             });
         } catch (err) {
             console.error(err);
@@ -307,7 +315,7 @@ const AdminDashboard = () => {
     const getTabTitle = () => {
         switch (activeTab) {
             case 'verification': return 'Verifications';
-            case 'cms': return 'Landing Page CMS';
+           // case 'cms': return 'Landing Page CMS';
             case 'complaints': return 'Complaints';
             case 'pa_management': return 'PA Management';
             case 'content_management': return 'Content Management';
@@ -634,7 +642,7 @@ const AdminDashboard = () => {
                                     {pending.events.map(ev => (
                                         <div key={ev._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                             <h3>{ev.category}</h3>
-                                            {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />}
+                                            {/* {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />} */}
                                             <p><strong>PA:</strong> {ev.pa?.fullName}</p>
                                             <p><strong>Desc:</strong> {ev.description}</p>
                                             <p><strong>Location:</strong> {ev.location}</p>
@@ -998,7 +1006,7 @@ const AdminDashboard = () => {
                     {activeTab === 'content_management' && (
                         <div>
                             <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Projects</h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                            {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
                                 {allContent.projects.map(p => (
                                     <div key={p._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -1015,10 +1023,108 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
+                            </div> */}
+                            <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gap: "16px",
+  }}
+>
+  {(allContent?.projects || []).length === 0 ? (
+    <div
+      style={{
+        background: "#fff",
+        padding: "20px",
+        borderRadius: "12px",
+        textAlign: "center",
+      }}
+    >
+      No projects found
+    </div>
+  ) : (
+    [...allContent.projects]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // recent first
+      .map((project) => (
+        <div
+          key={project._id}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: "16px",
+            padding: "20px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          {/* Title */}
+          <h4 style={{ margin: 0 }}>{project.title}</h4>
 
-                            <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Schemes</h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+          {/* Description */}
+          <p style={{ margin: 0, color: "#6B7280", fontSize: "0.9rem" }}>
+            {project.description}
+          </p>
+
+          {/* Allocated */}
+          <div style={{ fontWeight: 600 }}>
+            ₹{(project.fundsAllocated || 0).toLocaleString()}
+          </div>
+
+          {/* Status */}
+          <span
+            style={{
+              alignSelf: "flex-start",
+              padding: "4px 10px",
+              borderRadius: "8px",
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              backgroundColor:
+                project.status === "approved"
+                  ? "#DCFCE7"
+                  : project.status === "pending"
+                  ? "#FEF3C7"
+                  : "#FEE2E2",
+              color:
+                project.status === "approved"
+                  ? "#166534"
+                  : project.status === "pending"
+                  ? "#92400E"
+                  : "#991B1B",
+            }}
+          >
+            {project.status}
+          </span>
+
+          {/* Dates */}
+          <div
+            style={{
+              fontSize: "0.8rem",
+              color: "#6B7280",
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>
+              Start:{" "}
+              {project.startDate
+                ? new Date(project.startDate).toLocaleDateString()
+                : "-"}
+            </span>
+
+            <span>
+              Created:{" "}
+              {new Date(project.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      ))
+  )}
+</div>
+
+
+                            <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Events</h2>
+                            {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
                                 {allContent.schemes.map(s => (
                                     <div key={s._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -1035,10 +1141,118 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
+                            </div> */}
 
-                            <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>All Events</h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+                        <div style={{ 
+      display: "grid", 
+      gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", 
+      gap: "1.5rem",
+      marginBottom: "1rem"
+    }}>
+      {displayedEvents.map((ev) => (
+        <div 
+          key={ev._id} 
+          style={{ 
+            border: "1px solid #ddd", 
+            borderRadius: "8px",
+            overflow: "hidden",
+            backgroundColor: "white",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            transition: "transform 0.2s",
+            cursor: "pointer"
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-4px)"}
+          onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+        >
+          {/* Event Image */}
+          {ev.image && (
+            <div style={{ 
+              width: "100%", 
+              height: "200px", 
+              overflow: "hidden",
+              backgroundColor: "#f0f0f0"
+            }}>
+              <img 
+                src={ev.image} 
+                alt={ev.category}
+                style={{ 
+                  width: "100%", 
+                  height: "100%", 
+                  objectFit: "cover"
+                }}
+              />
+            </div>
+          )}
+          
+          {/* Event Details */}
+          <div style={{ padding: "1rem" }}>
+            <h4 style={{ 
+              margin: "0 0 0.75rem 0",
+              fontSize: "1.25rem",
+              color: "#333"
+            }}>
+              {ev.category}
+            </h4>
+            
+            <p style={{ 
+              margin: "0.5rem 0",
+              color: "#666",
+              fontSize: "0.9rem"
+            }}>
+              📅 {new Date(ev.date).toLocaleDateString()}
+            </p>
+            
+            <p style={{ 
+              margin: "0.5rem 0",
+              color: "#666",
+              fontSize: "0.9rem"
+            }}>
+              ⏰ {ev.time}
+            </p>
+            
+            <p style={{ 
+              margin: "0.5rem 0",
+              color: "#666",
+              fontSize: "0.9rem"
+            }}>
+              📍 {ev.location}
+            </p>
+            
+            {ev.description && (
+              <p style={{ 
+                margin: "0.75rem 0 0 0",
+                color: "#555",
+                fontSize: "0.85rem",
+                lineHeight: "1.4"
+              }}>
+                {ev.description.length > 100 
+                  ? `${ev.description.substring(0, 100)}...` 
+                  : ev.description}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px', marginBottom: '40px' }}>
                                 {allContent.events.map(ev => (
                                     <div key={ev._id} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -1055,7 +1269,7 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
+                            </div> */}
                         </div>
                     )}
 

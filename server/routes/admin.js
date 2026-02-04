@@ -91,7 +91,7 @@ router.get('/attendance/all', auth(['admin']), ensureAdmin, async (req, res) => 
     try {
         const attendance = await Attendance.find()
             .populate('season', 'name startDate endDate')
-            .populate('mla', 'fullName')
+            .populate()
             .populate('verifiedBy', 'fullName')
             .sort({ 'season': 1, 'date': -1 });
 
@@ -108,8 +108,8 @@ router.get('/attendance/all', auth(['admin']), ensureAdmin, async (req, res) => 
 router.get('/attendance/pending', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
         const attendance = await Attendance.find({ isVerified: false })
-            .populate('season', 'name')
-            .populate('mla', 'fullName')
+            .populate()
+            .populate()
             .sort({ date: -1 });
 
         res.json(attendance);
@@ -133,7 +133,7 @@ router.put('/attendance/:id/verify', auth(['admin']), ensureAdmin, async (req, r
                 remarks: remarks || ''
             },
             { new: true }
-        ).populate('season', 'name').populate('mla', 'fullName');
+        ).populate('season', 'name').populate()
 
         if (!attendance) {
             return res.status(404).json({ message: 'Attendance record not found' });
@@ -249,7 +249,7 @@ router.get('/pending', auth(['admin']), ensureAdmin, async (req, res) => {
         const eventsCount = await Event.countDocuments({ status: 'pending' });
         const attendance = await Attendance.find({ isVerified: false })
             .populate('season', 'name')
-            .populate('mla', 'fullName')
+            .populate()
             .sort({ date: -1 });
             console.log("pending attendance",attendance);
 
@@ -271,7 +271,7 @@ router.get('/pending', auth(['admin']), ensureAdmin, async (req, res) => {
 // GET /admin/projects/pending
 router.get('/projects/pending', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
-        const projects = await Project.find({ status: 'pending' }).populate('mla', 'fullName');
+        const projects = await Project.find({ status: 'pending' }).populate();
         res.json(projects);
     } catch (err) {
         console.error(err);
@@ -355,7 +355,7 @@ router.put('/event/:id/verify', auth(['admin']), ensureAdmin, async (req, res) =
 // GET /admin/projects - Get ALL projects
 router.get('/projects', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
-        const projects = await Project.find().populate('mla', 'fullName').sort({ createdAt: -1 });
+        const projects = await Project.find().populate().sort({ createdAt: -1 });
         res.json(projects);
     } catch (err) {
         console.error(err);
@@ -366,7 +366,7 @@ router.get('/projects', auth(['admin']), ensureAdmin, async (req, res) => {
 // GET /admin/schemes - Get ALL schemes
 router.get('/schemes', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
-        const schemes = await Scheme.find().populate('pa', 'fullName').sort({ createdAt: -1 });
+        const schemes = await Scheme.find().populate().sort({ createdAt: -1 });
         res.json(schemes);
     } catch (err) {
         console.error(err);
@@ -377,7 +377,7 @@ router.get('/schemes', auth(['admin']), ensureAdmin, async (req, res) => {
 // GET /admin/events - Get ALL events
 router.get('/events', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
-        const events = await Event.find().populate('pa', 'fullName').sort({ createdAt: -1 });
+        const events = await Event.find().populate().sort({ createdAt: -1 });
         res.json(events);
     } catch (err) {
         console.error(err);
