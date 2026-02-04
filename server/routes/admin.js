@@ -173,12 +173,17 @@ router.get('/schedules/today', auth(['admin']), ensureAdmin, async (req, res) =>
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
+        
+
+
         const schedules = await Schedule.find({
             date: { $gte: today, $lt: tomorrow },
             admin: req.user.id
         })
             .populate('createdBy', 'fullName')
             .sort({ time: 1 });
+console.log("today shedule",today,"tommorow",tomorrow,"line number 185 admin",schedules);
+
 
         res.json(schedules);
     } catch (err) {
