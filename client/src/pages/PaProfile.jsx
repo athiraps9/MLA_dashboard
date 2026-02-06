@@ -76,18 +76,25 @@ const PaProfile = () => {
                 console.log('Updating contact info:', updateData);
             }
 
+
+
+
+
             console.log('Sending update data:', updateData);
             console.log('Section:', section);
-
+            
             // Send as JSON with proper headers
             const res = await api.put('/auth/profile', updateData, {
+    
                 headers: {
                     'Content-Type': 'application/json'
                 }
+
             });
             
             console.log('Response from server:', res.data);
             
+             
             // Update user state with response data
             const updatedUser = { ...user, ...res.data };
             
@@ -352,10 +359,10 @@ const PaProfile = () => {
                                 </div>
                                 <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '40px' }}>
                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
-                                        {/* <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                                         <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0', flexShrink: 0 }}>
                                             <span className="material-symbols-outlined" style={{ color: '#6366F1' }}>corporate_fare</span>
-                                        </div> */}
-                                        {/* <div style={{ flex: 1 }}>
+                                        </div> 
+                                         <div style={{ flex: 1 }}>
                                             <p style={{ fontSize: '10px', color: '#94A3B8', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Office Address</p>
                                             {editMode.contact ? (
                                                 <textarea 
@@ -369,7 +376,7 @@ const PaProfile = () => {
                                             ) : (
                                                 <p style={{ fontSize: '16px', fontWeight: 700, color: '#475569', marginTop: '12px', lineHeight: 1.8, maxWidth: '448px' }}>{profileData.officeAddress || 'Not Set'}</p>
                                             )}
-                                        </div> */}
+                                        </div> 
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                         <div style={{ height: '56px', width: '56px', borderRadius: '16px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #E2E8F0' }}>

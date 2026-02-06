@@ -149,6 +149,91 @@ router.get('/pas', auth(), async (req, res) => {
         res.status(500).json({ message: 'Server error check' });
     }
 });
+
+router.put('/pas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fullName, username, email, password } = req.body;
+
+        const updateData = {
+            fullName,
+            username,
+            email
+        };
+
+        // Only update password if provided
+        if (password && password.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            updateData.password = await bcrypt.hash(password, salt);
+        }
+
+        const updatedPA = await User.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!updatedPA) {
+            return res.status(404).json({ message: 'PA not found' });
+        }
+
+        res.json({ message: 'PA updated successfully', pa: updatedPA });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'Username or email already exists' });
+        }
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Delete PA
+router.delete('/pas/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const deletedPA = await User.findByIdAndDelete(id);
+
+        if (!deletedPA) {
+            return res.status(404).json({ message: 'PA not found' });
+        }
+
+        res.json({ message: 'PA deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Toggle PA active status
+router.put('/pas/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+
+        const updatedPA = await User.findByIdAndUpdate(
+            id,
+            { isActive },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedPA) {
+            return res.status(404).json({ message: 'PA not found' });
+        }
+
+        res.json({ message: 'PA status updated successfully', pa: updatedPA });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+
+
+
+
+
+
+
+
 // Seed Initial Data (Run once or use for testing)
 router.post('/seed', async (req, res) => {
   try {
@@ -195,18 +280,23 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
             facebook, twitter, instagram
         } = req.body;
 
+        console.log("line number 198",req.body);
+
         // Check for unique constraints if username/email are changing
         if (username && username !== user.username) {
             const existing = await User.findOne({ username });
             if (existing) return res.status(400).json({ message: 'Username already taken' });
             user.username = username;
         }
+                console.log("line number 206");
 
         if (email && email !== user.email) {
             const existing = await User.findOne({ email });
             if (existing) return res.status(400).json({ message: 'Email already in use' });
             user.email = email;
         }
+                console.log("line number 213");
+
 
         if (fullName) user.fullName = fullName;
         if (phoneNumber) user.phoneNumber = phoneNumber;
@@ -214,6 +304,10 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
         if (gender) user.gender = gender;
         if (constituency) user.constituency = constituency;
         if (address) user.address = address;
+        if(officeAddress) user.officeAddress = officeAddress;
+
+                console.log("line number 223 before education");
+
         
         if (education) {
             try {
@@ -222,6 +316,8 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
                 console.error("Education parse error", e);
             }
         }
+                console.log("line number 234 after education");
+
 
         if (password && password.trim() !== '') {
             user.password = password; // Pre-save hook will hash this
@@ -231,6 +327,7 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
             user.avatar = `/uploads/${req.file.filename}`;
             console.log("user.avatar", user.avatar);
         }
+        console.log("244 user ",user);
 
         await user.save();
 
@@ -239,7 +336,7 @@ router.put('/profile',auth(), upload.single('avatar'), async (req, res) => {
         delete userObj.password;
         res.json(userObj); // updated data sends back to client
     } catch (err) {
-        console.error(err);
+        console.error(err,"in error $$ss");
         res.status(500).json({ message: 'Server error during profile update' });
     }
 });
