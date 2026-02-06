@@ -26,7 +26,7 @@ const Navbar = ({ user, onLogout }) => {
         if (user.role === 'admin' || user.role === 'mla') return '/admin/profile';
         if (user.role === 'pa') return '/pa/profile';
         // Pass activeSection as URL parameter for regular users
-        return '/user?section=profile';
+        return '/profile';
     };
 
 
