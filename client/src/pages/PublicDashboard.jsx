@@ -24,6 +24,10 @@ import {
 } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
 
+import DetailedView from "../components/DetailedView";
+import ProjectCardSection from "../components/Projectcardsection";
+
+
 
 
 ChartJS.register(
@@ -410,6 +414,10 @@ const tdStyle = {
         >
           {t("Recent Projects")}
         </h2>
+        <div> 
+          <ProjectCardSection data={data}/>
+
+        </div>
         {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 {recentProjects.map(project => (
                     <div className="card" key={project._id} title={project.title}>
