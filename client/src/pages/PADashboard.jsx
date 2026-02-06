@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../utils/api";
 import Card from "../components/Card";
 import Button from "../components/Button";
@@ -20,13 +20,13 @@ import {
 import "../styles/variables.css";
 import { all } from "axios";
 
-
 const PADashboard = () => {
   const [stats, setStats] = useState({});
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef(null);
-
+  const [success, setSuccess] = useState('');
+  const [editingId, setEditingId] = useState(null);
 
   // Attendance State
   const [seasons, setSeasons] = useState([]);
@@ -59,14 +59,37 @@ const PADashboard = () => {
   // Project State
   const [projects, setProjects] = useState([]);
   const [projectForm, setProjectForm] = useState({
-    title: "",
-    description: "",
-    fundsAllocated: "",
-    startDate: "",
-    endDate: "",
-    mlaId: "",
-    image: null,
+   projectNumber: '',
+        title: '',
+        description: '',
+        category: '',
+        constituency: '',
+        startDate: '',
+        endDate: '',
+        fundsAllocated: '',
+        projectImage: null
   });
+
+
+
+  // Category and Constituency options
+    const categories = ['SDF', 'ADF', 'ROAD'];
+    const constituencies = [
+        'Perinthal Manna',
+        'Melatoor',
+        'Manjeri',
+        'Malappuram',
+        'Vengara',
+        'Vallikkunnu',
+        'Tirurangadi',
+        'Tanur',
+        'Tirur',
+        'Kottakkal',
+        'Thavanur',
+        'Ponnani',
+        'Thrithala'
+    ];
+
 
   // Schemes State
   const [schemes, setSchemes] = useState([]);
@@ -167,6 +190,7 @@ const PADashboard = () => {
     try {
       const res = await api.get("/pa/projects");
       setProjects(res.data);
+      console.log("line number 193",res);
     } catch (err) {
       console.error(err);
     }
@@ -338,7 +362,7 @@ const PADashboard = () => {
     }
   };
 
-  const handleProjectUpdate = async (id, status) => {
+  const handleProjectUpdate = async (id) => {
     try {
       await api.put(`/pa/project/${id}`, { status });
       fetchProjects();
@@ -347,39 +371,136 @@ const PADashboard = () => {
     }
   };
 
-  const handleProjectSubmit = async (e) => {
-    e.preventDefault();
-    try {
-       // Reusing to find a user, or wait, mla-directory?
-      // Actually let's assume the user knows the MLA ID or we fetch it.
-      // For now, let's use a simpler approach or fetch from directory
-      
-      
-      const formData = new FormData();
-      Object.keys(projectForm).forEach((key) => {
-        if (key === "image" && projectForm[key])
-          formData.append("image", projectForm[key]);
-        else if (projectForm[key]) formData.append(key, projectForm[key]);
-      });
+    const handleProjectSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
 
-      await api.post("/pa/project", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      alert("Project created!");
-      setProjectForm({
-        title: "",
-        description: "",
-        fundsAllocated: "",
-        startDate: "",
-        endDate: "",
-        mlaId: "",
-        image: null,
-      });
-      fetchProjects();
-    } catch (err) {
-      alert("Failed to create project");
-    }
-  };
+        try {
+            const formData = new FormData();
+            Object.keys(projectForm).forEach(key => {
+                if (projectForm[key] !== null && projectForm[key] !== '') {
+                    formData.append(key, projectForm[key]);
+                }
+            });
+
+            if (editingId) {
+                // Update existing project
+                await api.put(`/pa/projects/${editingId}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                setSuccess('Project updated successfully!');
+                setEditingId(null);
+            } else {
+                // Create new project
+                
+              
+
+
+                await api.post('pa/projects', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                setSuccess('Project created successfully!');
+            }
+
+
+
+
+            // Reset form
+            setProjectForm({
+                projectNumber: '',
+                title: '',
+                description: '',
+                category: '',
+                constituency: '',
+                startDate: '',
+                endDate: '',
+                fundsAllocated: '',
+                projectImage: null
+            });
+            
+            // Clear file input
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) fileInput.value = '';
+
+            fetchProjects();
+        } catch (err) {
+            setError(err.response?.data?.message || `Failed to ${editingId ? 'update' : 'create'} project`);
+            console.error('Project submit error:', err);
+        }
+    };
+
+    const handleEdit = (project) => {
+        setEditingId(project._id);
+        setProjectForm({
+            projectNumber: project.projectNumber || '',
+            title: project.title || '',
+            description: project.description || '',
+            category: project.category || '',
+            constituency: project.constituency || '',
+            startDate: project.startDate ? project.startDate.split('T')[0] : '',
+            endDate: project.endDate ? project.endDate.split('T')[0] : '',
+            fundsAllocated: project.fundsAllocated || '',
+            projectImage: null // Don't pre-populate file
+        });
+
+        
+        setError('');
+        setSuccess('');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setProjectForm({
+            projectNumber: '',
+            title: '',
+            description: '',
+            category: '',
+            constituency: '',
+            startDate: '',
+            endDate: '',
+            fundsAllocated: '',
+            projectImage: null
+        });
+        setError('');
+        setSuccess('');
+        
+        // Clear file input
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = '';
+    };
+
+    const handleDelete = async (id) => {
+  // Shows confirmation dialog
+  if (!window.confirm('Are you sure?')) return;
+  
+  // Deletes from database
+  await api.delete(`/pa/projects/${id}`);
+  
+  // Updates view immediately (removes from UI)
+  setProjects(prevProjects => prevProjects.filter(project => project._id !== id));
+  
+  // Shows success message
+  setSuccess('Project deleted successfully!');
+};
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
 
   const handleSchemeSubmit = async (e) => {
     e.preventDefault();
@@ -432,12 +553,11 @@ const PADashboard = () => {
         image: null,
       });
 
-    // Clear the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       fetchEvents();
-      
     } catch (err) {
       alert("Failed to submit event");
     }
@@ -569,15 +689,23 @@ const PADashboard = () => {
       color: "#1a365d",
       marginBottom: "4px",
     },
-    input: {
-      padding: "12px",
-      borderRadius: "10px",
-      border: "1px solid #e2e8f0",
-      fontSize: "1rem",
-      width: "100%",
-      background: "rgba(255,255,255,0.8)",
-      transition: "border-color 0.2s ease",
-    },
+    
+        
+        input: {
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '0.95rem'
+        },
+        select: {
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            fontSize: '0.95rem',
+            backgroundColor: 'white',
+            cursor: 'pointer'
+        },
+        
   };
 
   const handleLogout = () => {
@@ -617,6 +745,16 @@ const PADashboard = () => {
     };
     return titles[activeTab] || "Dashboard";
   };
+
+
+
+
+
+
+
+
+
+  
 
   return (
     <div
@@ -832,7 +970,7 @@ const PADashboard = () => {
               </div>
             </div>
             {/* <div style={{ display: "flex", alignItems: "center", gap: "24px" }}> */}
-              {/* <button
+            {/* <button
                 style={{
                   padding: "10px",
                   color: "#64748B",
@@ -842,8 +980,8 @@ const PADashboard = () => {
                   position: "relative",
                 }}
               > */}
-                {/* <span className="material-symbols-outlined">notifications</span> */}
-                {/* <span
+            {/* <span className="material-symbols-outlined">notifications</span> */}
+            {/* <span
                   style={{
                     position: "absolute",
                     top: "8px",
@@ -856,7 +994,7 @@ const PADashboard = () => {
                   }}
                 ></span>
               </button> */}
-              {/* <div
+            {/* <div
                 style={{
                   height: "44px",
                   width: "44px",
@@ -873,8 +1011,7 @@ const PADashboard = () => {
               >
                 PA
               </div> */}
-            </div>
-        
+          </div>
         </header>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px" }}>
           {activeTab === "dashboard" && (
@@ -1187,22 +1324,11 @@ const PADashboard = () => {
                   marginBottom: "20px",
                 }}
               >
-                
-                
-                
-                
                 {/* Attendance report here */}
-                
-            <AttendanceReport
-            seasons={seasons}
-            allAttendance={allAttendance}
-            />
-
-                
-                
-                
-                
-               
+                <AttendanceReport
+                  seasons={seasons}
+                  allAttendance={allAttendance}
+                />
                 Pending Verification
               </h3>
               {pendingAttendance.length === 0 ? (
@@ -1260,327 +1386,928 @@ const PADashboard = () => {
           )}
           {activeTab === "scheduling" && (
             <div>
-                    <h2 style={{ marginBottom: '20px' }}>Schedule Management</h2>
+              <h2 style={{ marginBottom: "20px" }}>Schedule Management</h2>
 
-                    {/* Create Schedule Form */}
-                    <Card title="Create New Schedule">
-                        <form onSubmit={handleScheduleSubmit} style={{ display: 'grid', gap: '15px', maxWidth: '600px' }}>
-                            {admins.length > 0 && (
-                                <div style={{ padding: '10px', background: '#f0f4f8', borderRadius: '8px', border: '1px solid #d1d9e6', color: '#2d3748', fontSize: '0.9rem', fontWeight: '500' }}>
-                                    Schedule with: <strong>{admins[0].fullName}</strong>
-                                </div>
-                            )}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Date</label>
-                                    <input
-                                        type="date"
-                                        className="form-control"
-                                        value={scheduleForm.date}
-                                        onChange={e => {
-                                            setScheduleForm({ ...scheduleForm, date: e.target.value });
-                                            if (scheduleForm.adminId && e.target.value) {
-                                                checkAvailability(scheduleForm.adminId, e.target.value);
-                                            }
-                                        }}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Time</label>
-                                    <input
-                                        type="time"
-                                        className="form-control"
-                                        value={scheduleForm.time}
-                                        onChange={e => setScheduleForm({ ...scheduleForm, time: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Availability Indicator */}
-                            {availability && (
-                                <div style={{
-                                    padding: '10px',
-                                    borderRadius: '6px',
-                                    backgroundColor: availability.isAvailable ? '#d4edda' : '#f8d7da',
-                                    color: availability.isAvailable ? '#155724' : '#721c24',
-                                    fontSize: '0.9rem'
-                                }}>
-                                    {availability.isAvailable ? '✓ Admin is available on this date' : '✗ Admin has existing schedules on this date'}
-                                </div>
-                            )}
-
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Venue</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    value={scheduleForm.venue}
-                                    onChange={e => setScheduleForm({ ...scheduleForm, venue: e.target.value })}
-                                    required
-                                    placeholder="e.g., Assembly Hall"
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Schedule Type</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    value={scheduleForm.scheduleType}
-                                    onChange={e => setScheduleForm({ ...scheduleForm, scheduleType: e.target.value })}
-                                    required
-                                    placeholder="e.g., Meeting, Event, Session"
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Description</label>
-                                <textarea
-                                    className="form-control"
-                                    value={scheduleForm.description}
-                                    onChange={e => setScheduleForm({ ...scheduleForm, description: e.target.value })}
-                                    rows="3"
-                                    placeholder="Optional description"
-                                />
-                            </div>
-                            <Button type="submit">Create Schedule</Button>
-                        </form>
-                    </Card>
-
-                    {/* Calendar View */}
-                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>Calendar View</h3>
-                    <SimpleCalendar
-                        schedules={schedules}
-                        busyDates={busyDates}
-                        onDateClick={(date) => {
-                            setSelectedDate(date);
-                            const formattedDate = date.toISOString().split('T')[0];
-                            setScheduleForm(prev => ({ ...prev, date: formattedDate }));
-                            if (scheduleForm.adminId) {
-                                checkAvailability(scheduleForm.adminId, formattedDate);
-                            }
+              {/* Create Schedule Form */}
+              <Card title="Create New Schedule">
+                <form
+                  onSubmit={handleScheduleSubmit}
+                  style={{ display: "grid", gap: "15px", maxWidth: "600px" }}
+                >
+                  {admins.length > 0 && (
+                    <div
+                      style={{
+                        padding: "10px",
+                        background: "#f0f4f8",
+                        borderRadius: "8px",
+                        border: "1px solid #d1d9e6",
+                        color: "#2d3748",
+                        fontSize: "0.9rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Schedule with: <strong>{admins[0].fullName}</strong>
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "15px",
+                    }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: "5px",
+                          fontWeight: "bold",
                         }}
-                    />
+                      >
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={scheduleForm.date}
+                        onChange={(e) => {
+                          setScheduleForm({
+                            ...scheduleForm,
+                            date: e.target.value,
+                          });
+                          if (scheduleForm.adminId && e.target.value) {
+                            checkAvailability(
+                              scheduleForm.adminId,
+                              e.target.value,
+                            );
+                          }
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: "5px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Time
+                      </label>
+                      <input
+                        type="time"
+                        className="form-control"
+                        value={scheduleForm.time}
+                        onChange={(e) =>
+                          setScheduleForm({
+                            ...scheduleForm,
+                            time: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
 
-                    {/* My Schedules */}
-                    <h3 style={{ marginTop: '40px', marginBottom: '20px' }}>My Schedules</h3>
-                    {schedules.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No schedules created yet.</p>
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-                            {schedules.map(schedule => (
-                                <ScheduleCard key={schedule._id} schedule={schedule} />
-                            ))}
-                        </div>
-                    )}
+                  {/* Availability Indicator */}
+                  {availability && (
+                    <div
+                      style={{
+                        padding: "10px",
+                        borderRadius: "6px",
+                        backgroundColor: availability.isAvailable
+                          ? "#d4edda"
+                          : "#f8d7da",
+                        color: availability.isAvailable ? "#155724" : "#721c24",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      {availability.isAvailable
+                        ? "✓ Admin is available on this date"
+                        : "✗ Admin has existing schedules on this date"}
+                    </div>
+                  )}
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Venue
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={scheduleForm.venue}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          venue: e.target.value,
+                        })
+                      }
+                      required
+                      placeholder="e.g., Assembly Hall"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Schedule Type
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={scheduleForm.scheduleType}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          scheduleType: e.target.value,
+                        })
+                      }
+                      required
+                      placeholder="e.g., Meeting, Event, Session"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "5px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      className="form-control"
+                      value={scheduleForm.description}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          description: e.target.value,
+                        })
+                      }
+                      rows="3"
+                      placeholder="Optional description"
+                    />
+                  </div>
+                  <Button type="submit">Create Schedule</Button>
+                </form>
+              </Card>
+
+              {/* Calendar View */}
+              <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
+                Calendar View
+              </h3>
+              <SimpleCalendar
+                schedules={schedules}
+                busyDates={busyDates}
+                onDateClick={(date) => {
+                  setSelectedDate(date);
+                  const formattedDate = date.toISOString().split("T")[0];
+                  setScheduleForm((prev) => ({ ...prev, date: formattedDate }));
+                  if (scheduleForm.adminId) {
+                    checkAvailability(scheduleForm.adminId, formattedDate);
+                  }
+                }}
+              />
+
+              {/* My Schedules */}
+              <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
+                My Schedules
+              </h3>
+              {schedules.length === 0 ? (
+                <p
+                  style={{
+                    textAlign: "center",
+                    color: "#666",
+                    padding: "20px",
+                  }}
+                >
+                  No schedules created yet.
+                </p>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(350px, 1fr))",
+                    gap: "20px",
+                  }}
+                >
+                  {schedules.map((schedule) => (
+                    <ScheduleCard key={schedule._id} schedule={schedule} />
+                  ))}
                 </div>
+              )}
+            </div>
           )}
           {activeTab === "projects" && (
-            <div style={{ display: 'grid', gap: '2rem' }}>
-                        <Card title="Create New Project">
-                            <form onSubmit={handleProjectSubmit} style={{ display: 'grid', gap: '15px' }}>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Title</label>
-                                    <input style={styles.input} value={projectForm.title} onChange={e => setProjectForm({ ...projectForm, title: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Description</label>
-                                    <textarea style={styles.input} value={projectForm.description} onChange={e => setProjectForm({ ...projectForm, description: e.target.value })} required />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Start Date</label>
-                                        <input type="date" style={styles.input} value={projectForm.startDate} onChange={e => setProjectForm({ ...projectForm, startDate: e.target.value })} required />
-                                    </div>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>End Date</label>
-                                        <input type="date" style={styles.input} value={projectForm.endDate} onChange={e => setProjectForm({ ...projectForm, endDate: e.target.value })} required />
-                                    </div>
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Budget Allocation</label>
-                                    <input type="number" style={styles.input} value={projectForm.fundsAllocated} onChange={e => setProjectForm({ ...projectForm, fundsAllocated: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Project Image</label>
-                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setProjectForm)} />
-                                </div>
-                                <Button type="submit">Create Project</Button>
-                            </form>
-                        </Card>
+            <div style={{ display: "grid", gap: "2rem" }}>
+              <div>
+                <>
+                  <Card
+                    title={editingId ? "Edit Project" : "Create New Project"}
+                  >
+                    {error && (
+                      <div
+                        style={{
+                          color: "red",
+                          marginBottom: "15px",
+                          padding: "10px",
+                          backgroundColor: "#fee",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {error}
+                      </div>
+                    )}
 
-                        <div>
-                            <h3>Project Status Management</h3>
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                {projects.map(p => (
-                                    <Card key={p._id} title={p.title}>
-                                        {p.imageUrl && <img src={`${SERVER_URL}${p.imageUrl}`} alt={p.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
-                                        <div style={{ marginBottom: '1rem' }}>
-                                            <span style={{
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.8rem',
-                                                background: p.status === 'approved' ? '#C6F6D5' : p.status === 'pending' ? '#FEEBC8' : '#FED7D7',
-                                                color: p.status === 'approved' ? '#22543D' : p.status === 'pending' ? '#744210' : '#822727'
-                                            }}>
-                                                {p.status.toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                            <Button variant="outline" size="small" onClick={() => handleProjectUpdate(p._id, 'in-progress')}>Mark In Progress</Button>
-                                            <Button variant="outline" size="small" onClick={() => handleProjectUpdate(p._id, 'completed')}>Mark Completed</Button>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
+                    {success && (
+                      <div
+                        style={{
+                          color: "green",
+                          marginBottom: "15px",
+                          padding: "10px",
+                          backgroundColor: "#efe",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {success}
+                      </div>
+                    )}
+
+                    <form
+                      onSubmit={handleProjectSubmit}
+                      style={{ display: "grid", gap: "15px" }}
+                    >
+                      {/* Project Number & Category */}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "15px",
+                        }}
+                      >
+                        <div style={styles.inputGroup}>
+                          <label style={styles.label}>Project Number *</label>
+                          <input
+                            style={styles.input}
+                            value={projectForm.projectNumber}
+                            onChange={(e) =>
+                              setProjectForm({
+                                ...projectForm,
+                                projectNumber: e.target.value,
+                              })
+                            }
+                            required
+                          />
                         </div>
-                    </div>
+
+                        <div style={styles.inputGroup}>
+                          <label style={styles.label}>Category *</label>
+                          <select
+                            style={styles.select}
+                            value={projectForm.category}
+                            onChange={(e) =>
+                              setProjectForm({
+                                ...projectForm,
+                                category: e.target.value,
+                              })
+                            }
+                            required
+                          >
+                            <option value="">Select Category</option>
+                            {categories.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Title */}
+                      <div style={styles.inputGroup}>
+                        <label style={styles.label}>Project Title *</label>
+                        <input
+                          style={styles.input}
+                          value={projectForm.title}
+                          onChange={(e) =>
+                            setProjectForm({
+                              ...projectForm,
+                              title: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+
+                      {/* Description */}
+                      <div style={styles.inputGroup}>
+                        <label style={styles.label}>Description *</label>
+                        <textarea
+                          style={{ ...styles.input, minHeight: "100px" }}
+                          value={projectForm.description}
+                          onChange={(e) =>
+                            setProjectForm({
+                              ...projectForm,
+                              description: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+
+                      {/* Constituency */}
+                      <div style={styles.inputGroup}>
+                        <label style={styles.label}>Constituency *</label>
+                        <select
+                          style={styles.select}
+                          value={projectForm.constituency}
+                          onChange={(e) =>
+                            setProjectForm({
+                              ...projectForm,
+                              constituency: e.target.value,
+                            })
+                          }
+                          required
+                        >
+                          <option value="">Select Constituency</option>
+                          {constituencies.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Dates */}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "15px",
+                        }}
+                      >
+                        <div style={styles.inputGroup}>
+                          <label style={styles.label}>Start Date *</label>
+                          <input
+                            type="date"
+                            style={styles.input}
+                            value={projectForm.startDate}
+                            onChange={(e) =>
+                              setProjectForm({
+                                ...projectForm,
+                                startDate: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div style={styles.inputGroup}>
+                          <label style={styles.label}>End Date *</label>
+                          <input
+                            type="date"
+                            style={styles.input}
+                            value={projectForm.endDate}
+                            onChange={(e) =>
+                              setProjectForm({
+                                ...projectForm,
+                                endDate: e.target.value,
+                              })
+                            }
+                            min={projectForm.startDate}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Budget */}
+                      <div style={styles.inputGroup}>
+                        <label style={styles.label}>Budget Allocation *</label>
+                        <input
+                          type="text"
+                          style={styles.input}
+                          value={projectForm.fundsAllocated}
+                          onChange={(e) =>
+                            setProjectForm({
+                              ...projectForm,
+                              fundsAllocated: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+
+                      {/* Image */}
+                      <div style={styles.inputGroup}>
+                        <label style={styles.label}>Project Image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                        />
+                      </div>
+
+                      {/* Buttons */}
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <Button type="submit">
+                          {editingId ? "Update Project" : "Create Project"}
+                        </Button>
+
+                        {editingId && (
+                          <Button  type="button" onClick={handleCancelEdit}>
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    </form>
+                  </Card>
+
+                  {/* Project List */}
+                  {/* <Card title="All Projects">
+                    {loading ? (
+                      <p>Loading projects...</p>
+                    ) : (
+                      <div style={{ display: "grid", gap: "15px" }}>
+                        {projects.map((project) => (
+                          <div
+                            key={project._id}
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "20px",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            <h3>{project.title}</h3>
+                            <p>{project.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card> */}
+                </>
+              </div>
+
+              <div>
+                <h3>Project Status Management</h3>
+                <div style={{ display: "grid", gap: "1rem" }}>
+    {projects.map((p) => (
+      <Card key={p._id} title={p.title}>
+        {p.imageUrl && (
+          <img
+            src={`${SERVER_URL}${p.imageUrl}`}
+            alt={p.title}
+            style={{
+              width: "100%",
+              height: "150px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              marginBottom: "10px",
+            }}
+          />
+        )}
+        
+        <div style={{ marginBottom: "1rem" }}>
+          <span
+            style={{
+              padding: "4px 8px",
+              borderRadius: "4px",
+              fontSize: "0.8rem",
+              background:
+                p.status === "approved"
+                  ? "#C6F6D5"
+                  : p.status === "pending"
+                    ? "#FEEBC8"
+                    : "#FED7D7",
+              color:
+                p.status === "approved"
+                  ? "#22543D"
+                  : p.status === "pending"
+                    ? "#744210"
+                    : "#822727",
+            }}
+          >
+            {p.status.toUpperCase()}
+          </span>
+        </div>
+        
+        <div style={{ display: "flex", gap: "10px", marginBottom: "10px", }}>
+          <Button
+            variant="outline"
+            size="small"
+            onClick={() => handleProjectUpdate(p._id, "in-progress")}
+          >
+            Mark In Progress
+          </Button>
+          <Button
+            variant="outline"
+            size="small"
+            onClick={() => handleProjectUpdate(p._id, "completed")}
+          >
+            Mark Completed
+          </Button>
+        </div>
+
+        {/* NEW: Edit and Delete Buttons */}
+        
+          <button
+            onClick={() => handleEdit(p)}
+             style ={{
+               fontSize: "20px",
+              color: "navy",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+             }}
+          
+            
+            onMouseOver={(e) => e.target.style.opacity = "0.8"}
+            onMouseOut={(e) => e.target.style.opacity = "1"}
+            
+          >
+            
+             <i className="fas fa-pencil-alt"></i>
+          </button>
+          <button
+            onClick={() => handleDelete(p._id)}
+             style ={{
+               fontSize: "20px",
+              color: "navy",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+             }}
+           
+            onMouseOver={(e) => e.target.style.opacity = "0.8"}
+            onMouseOut={(e) => e.target.style.opacity = "1"}
+          >
+            <i className="fas fa-trash-alt"></i>
+          </button>
+      </Card>
+    ))}
+  </div>
+               
+   </div>
+                  
+
+
+
+
+
+
+
+            </div>
           )}
 
           {activeTab === "schemes" && (
-            <div style={{ display: 'grid', gap: '2rem' }}>
-                        <Card title="Submit New Scheme">
-                            <form onSubmit={handleSchemeSubmit} style={{ display: 'grid', gap: '15px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Date</label>
-                                        <input type="date" style={styles.input} value={schemeForm.date} onChange={e => setSchemeForm({ ...schemeForm, date: e.target.value })} required />
-                                    </div>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Time</label>
-                                        <input type="time" style={styles.input} value={schemeForm.time} onChange={e => setSchemeForm({ ...schemeForm, time: e.target.value })} required />
-                                    </div>
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Location</label>
-                                    <input style={styles.input} value={schemeForm.location} onChange={e => setSchemeForm({ ...schemeForm, location: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Category</label>
-                                    <input style={styles.input} value={schemeForm.category} onChange={e => setSchemeForm({ ...schemeForm, category: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Description</label>
-                                    <textarea style={styles.input} value={schemeForm.description} onChange={e => setSchemeForm({ ...schemeForm, description: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Scheme Image</label>
-                                    <input type="file" accept="image/*" style={styles.input} onChange={e => handleFileChange(e, setSchemeForm)} />
-                                </div>
-                                <Button type="submit">Submit Scheme</Button>
-                            </form>
-                        </Card>
-
-                        <div>
-                            <h3>Submitted Schemes</h3>
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                {schemes.map(s => (
-                                    <Card key={s._id} title={s.category}>
-                                        {s.imageUrl && <img src={`${SERVER_URL}${s.imageUrl}`} alt={s.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
-                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(s.date).toLocaleDateString()} | {s.time} | {s.location}</p>
-                                        <p>{s.description}</p>
-                                        <div>
-                                            <span style={{
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.8rem',
-                                                background: s.status === 'approved' ? '#C6F6D5' : s.status === 'pending' ? '#FEEBC8' : '#FED7D7',
-                                                color: s.status === 'approved' ? '#22543D' : s.status === 'pending' ? '#744210' : '#822727'
-                                            }}>
-                                                {s.status.toUpperCase()}
-                                            </span>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
+            <div style={{ display: "grid", gap: "2rem" }}>
+              <Card title="Submit New Scheme">
+                <form
+                  onSubmit={handleSchemeSubmit}
+                  style={{ display: "grid", gap: "15px" }}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "15px",
+                    }}
+                  >
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Date</label>
+                      <input
+                        type="date"
+                        style={styles.input}
+                        value={schemeForm.date}
+                        onChange={(e) =>
+                          setSchemeForm({ ...schemeForm, date: e.target.value })
+                        }
+                        required
+                      />
                     </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Time</label>
+                      <input
+                        type="time"
+                        style={styles.input}
+                        value={schemeForm.time}
+                        onChange={(e) =>
+                          setSchemeForm({ ...schemeForm, time: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Location</label>
+                    <input
+                      style={styles.input}
+                      value={schemeForm.location}
+                      onChange={(e) =>
+                        setSchemeForm({
+                          ...schemeForm,
+                          location: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Category</label>
+                    <input
+                      style={styles.input}
+                      value={schemeForm.category}
+                      onChange={(e) =>
+                        setSchemeForm({
+                          ...schemeForm,
+                          category: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Description</label>
+                    <textarea
+                      style={styles.input}
+                      value={schemeForm.description}
+                      onChange={(e) =>
+                        setSchemeForm({
+                          ...schemeForm,
+                          description: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Scheme Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={styles.input}
+                      onChange={(e) => handleFileChange(e, setSchemeForm)}
+                    />
+                  </div>
+                  <Button type="submit">Submit Scheme</Button>
+                </form>
+              </Card>
+
+              <div>
+                <h3>Submitted Schemes</h3>
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {schemes.map((s) => (
+                    <Card key={s._id} title={s.category}>
+                      {s.imageUrl && (
+                        <img
+                          src={`${SERVER_URL}${s.imageUrl}`}
+                          alt={s.category}
+                          style={{
+                            width: "100%",
+                            height: "150px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            marginBottom: "10px",
+                          }}
+                        />
+                      )}
+                      <p style={{ fontSize: "0.9rem", color: "#666" }}>
+                        {new Date(s.date).toLocaleDateString()} | {s.time} |{" "}
+                        {s.location}
+                      </p>
+                      <p>{s.description}</p>
+                      <div>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "0.8rem",
+                            background:
+                              s.status === "approved"
+                                ? "#C6F6D5"
+                                : s.status === "pending"
+                                  ? "#FEEBC8"
+                                  : "#FED7D7",
+                            color:
+                              s.status === "approved"
+                                ? "#22543D"
+                                : s.status === "pending"
+                                  ? "#744210"
+                                  : "#822727",
+                          }}
+                        >
+                          {s.status.toUpperCase()}
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === "events" && (
-            <div style={{ display: 'grid', gap: '2rem' }}>
-                        <Card title="Submit New Event">
-                            <form onSubmit={handleEventSubmit} style={{ display: 'grid', gap: '15px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Date</label>
-                                        <input type="date" style={styles.input} value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} required />
-                                    </div>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Time</label>
-                                        <input type="time" style={styles.input} value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} required />
-                                    </div>
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Location</label>
-                                    <input style={styles.input} value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Category</label>
-                                    <input style={styles.input} value={eventForm.category} onChange={e => setEventForm({ ...eventForm, category: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Description</label>
-                                    <textarea style={styles.input} value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} required />
-                                </div>
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Event Image</label>
-                                    <input type="file" accept="image/*" style={styles.input} ref={fileInputRef} onChange={e => handleFileChange(e, setEventForm)} />
-                                </div>
-                                <Button type="submit">Submit Event</Button>
-                            </form>
-                        </Card>
-
-                        <div>
-                            <h3>Submitted Events</h3>
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                {events.map(ev => (
-                                    <Card key={ev._id} title={ev.category}>
-                                        {ev.imageUrl && <img src={`${SERVER_URL}${ev.imageUrl}`} alt={ev.category} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
-                                        <p style={{ fontSize: '0.9rem', color: '#666' }}>{new Date(ev.date).toLocaleDateString()} | {ev.time} | {ev.location}</p>
-                                        <p>{ev.description}</p>
-                                        <div>
-                                            <span style={{
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.8rem',
-                                                background: ev.status === 'approved' ? '#C6F6D5' : ev.status === 'pending' ? '#FEEBC8' : '#FED7D7',
-                                                color: ev.status === 'approved' ? '#22543D' : ev.status === 'pending' ? '#744210' : '#822727'
-                                            }}>
-                                                {ev.status.toUpperCase()}
-                                            </span>
-                                        </div>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
+            <div style={{ display: "grid", gap: "2rem" }}>
+              <Card title="Submit New Event">
+                <form
+                  onSubmit={handleEventSubmit}
+                  style={{ display: "grid", gap: "15px" }}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "15px",
+                    }}
+                  >
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Date</label>
+                      <input
+                        type="date"
+                        style={styles.input}
+                        value={eventForm.date}
+                        onChange={(e) =>
+                          setEventForm({ ...eventForm, date: e.target.value })
+                        }
+                        required
+                      />
                     </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Time</label>
+                      <input
+                        type="time"
+                        style={styles.input}
+                        value={eventForm.time}
+                        onChange={(e) =>
+                          setEventForm({ ...eventForm, time: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Location</label>
+                    <input
+                      style={styles.input}
+                      value={eventForm.location}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, location: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Category</label>
+                    <input
+                      style={styles.input}
+                      value={eventForm.category}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, category: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Description</label>
+                    <textarea
+                      style={styles.input}
+                      value={eventForm.description}
+                      onChange={(e) =>
+                        setEventForm({
+                          ...eventForm,
+                          description: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Event Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={styles.input}
+                      ref={fileInputRef}
+                      onChange={(e) => handleFileChange(e, setEventForm)}
+                    />
+                  </div>
+                  <Button type="submit">Submit Event</Button>
+                </form>
+              </Card>
+
+              <div>
+                <h3>Submitted Events</h3>
+                <div style={{ display: "grid", gap: "1rem" }}>
+                  {events.map((ev) => (
+                    <Card key={ev._id} title={ev.category}>
+                      {ev.imageUrl && (
+                        <img
+                          src={`${SERVER_URL}${ev.imageUrl}`}
+                          alt={ev.category}
+                          style={{
+                            width: "100%",
+                            height: "150px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            marginBottom: "10px",
+                          }}
+                        />
+                      )}
+                      <p style={{ fontSize: "0.9rem", color: "#666" }}>
+                        {new Date(ev.date).toLocaleDateString()} | {ev.time} |{" "}
+                        {ev.location}
+                      </p>
+                      <p>{ev.description}</p>
+                      <div>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "0.8rem",
+                            background:
+                              ev.status === "approved"
+                                ? "#C6F6D5"
+                                : ev.status === "pending"
+                                  ? "#FEEBC8"
+                                  : "#FED7D7",
+                            color:
+                              ev.status === "approved"
+                                ? "#22543D"
+                                : ev.status === "pending"
+                                  ? "#744210"
+                                  : "#822727",
+                          }}
+                        >
+                          {ev.status.toUpperCase()}
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
 
           {activeTab === "complaints" && (
             <div>
-                        <h3>Complaint Management</h3>
-                        {complaints.map(c => (
-                            <div key={c._id} className="card p-3 mb-3">
-
-                                <h4>{c.title}</h4>
-                                {c.imageUrl && <img src={`${SERVER_URL}${c.imageUrl}`} alt="Complaint" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
-                                <p>{c.description}</p>
-                                <p>Status: <strong>{c.status}</strong></p>
-                                {c.adminResponse && <p>Admin: {c.adminResponse}</p>}
-                                <div className="flex gap-2">
-                                    <Button onClick={() => handleComplaintUpdate(c._id, 'In Progress', prompt('Enter update:'))}>Update Status</Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+              <h3>Complaint Management</h3>
+              {complaints.map((c) => (
+                <div key={c._id} className="card p-3 mb-3">
+                  <h4>{c.title}</h4>
+                  {c.imageUrl && (
+                    <img
+                      src={`${SERVER_URL}${c.imageUrl}`}
+                      alt="Complaint"
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        marginBottom: "10px",
+                      }}
+                    />
+                  )}
+                  <p>{c.description}</p>
+                  <p>
+                    Status: <strong>{c.status}</strong>
+                  </p>
+                  {c.adminResponse && <p>Admin: {c.adminResponse}</p>}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() =>
+                        handleComplaintUpdate(
+                          c._id,
+                          "In Progress",
+                          prompt("Enter update:"),
+                        )
+                      }
+                    >
+                      Update Status
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {activeTab === "profile" && (
             <div>
-                <PaProfile/>
+              <PaProfile />
             </div>
-            
           )}
         </div>
       </main>

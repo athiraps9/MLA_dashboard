@@ -111,7 +111,7 @@ router.get('/attendance/pending', auth(), ensurePA, async (req, res) => {
 // GET /pa/projects - Get all projects for management
 router.get('/projects', auth(), ensurePA, async (req, res) => {
     try {
-        const projects = await Project.find().populate('mla', 'fullName');
+        const projects = await Project.find().populate();
         res.json(projects);
     } catch (err) {
         console.error(err);
@@ -138,6 +138,87 @@ router.post('/project', auth(), ensurePA, upload.single('image'), async (req, re
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// Delete project
+router.delete('/projects/:id', async (req, res) => {
+    try {
+        const deletedProject = await Project.findByIdAndDelete(req.params.id);
+
+        if (!deletedProject) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({ message: 'Project deleted successfully' });
+    } catch (error) {
+        console.error('Delete project error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+
+router.put('/projects/:id', upload.single('projectImage'), async (req, res) => {
+    try {
+        const {
+            projectNumber,
+            title,
+            description,
+            category,
+            constituency,
+            startDate,
+            endDate,
+            fundsAllocated
+        } = req.body;
+
+        const updateData = {
+            projectNumber,
+            title,
+            description,
+            category,
+            constituency,
+            startDate,
+            endDate,
+            fundsAllocated
+        };
+
+        if (req.file) {
+            updateData.projectImage = `/uploads/projects/${req.file.filename}`;
+        }
+         
+        console.log("im in project put",req.params.id);
+        const updatedProject = await Project.findByIdAndUpdate(
+            
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+
+        
+        );
+
+        if (!updatedProject) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        res.json({ 
+            message: 'Project updated successfully', 
+            project: updatedProject 
+        });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'Project number already exists' });
+        }
+        console.error('Update project error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+
+
+
+
+
+
 
 // PUT /pa/project/:id - Update project status/details
 router.put('/project/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
