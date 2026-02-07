@@ -14,6 +14,7 @@ import api from "../utils/api";
 import Card from "../components/Card";
 import ScheduleCard from "../components/ScheduleCard";
 import { Link } from "react-router-dom";
+import "../styles/variables.css";
 import {
   FaProjectDiagram,
   FaRupeeSign,
@@ -27,9 +28,6 @@ import { useLanguage } from "../context/LanguageContext";
 import DetailedView from "../components/DetailedView";
 import ProjectCardSection from "../components/Projectcardsection";
 
-
-
-
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -41,23 +39,20 @@ ChartJS.register(
 );
 
 const PublicDashboard = () => {
-  const [data, setData] = useState({ projects: [], attendance: [],events:[] });
+  const [data, setData] = useState({
+    projects: [],
+    attendance: [],
+    events: [],
+  });
   const [loading, setLoading] = useState(true);
   const [attendancePercentage, setAttendancePercentage] = useState(0);
   const [schedules, setSchedules] = useState([]);
   const { t } = useLanguage();
   const [events, setEvents] = useState([]);
 
-const [showAllEvents, setShowAllEvents] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(false);
 
-
-const displayedEvents = showAllEvents ? events : events.slice(0, 2);
-
-
-  
-
-
-
+  const displayedEvents = showAllEvents ? events : events.slice(0, 2);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,12 +71,11 @@ const displayedEvents = showAllEvents ? events : events.slice(0, 2);
         const schedulesRes = await api.get("/data/schedules");
         setSchedules(schedulesRes.data);
 
-        //Fetch all events 
-     
-      const events = await api.get("data/events");
-       setEvents(events.data);
-       console.log("events data fetching purpose",events.data);
+        //Fetch all events
 
+        const events = await api.get("data/events");
+        setEvents(events.data);
+        console.log("events data fetching purpose", events.data);
       } catch (err) {
         console.error("Error fetching public data", err);
       } finally {
@@ -89,19 +83,7 @@ const displayedEvents = showAllEvents ? events : events.slice(0, 2);
       }
     };
     fetchData();
-    
   }, []);
-
-
-
-
-
-
-
-
-
-
-
 
   if (loading)
     return (
@@ -209,6 +191,18 @@ const displayedEvents = showAllEvents ? events : events.slice(0, 2);
   );
 
   const styles = {
+
+     container: { display: 'flex', minHeight: 'calc(100vh - 80px)' },
+        sidebar: { width: '250px', background: '#f8f9fa', padding: '20px', borderRight: '1px solid #ddd' },
+        content: { flex: 1, padding: '30px' },
+        menuItem: active => ({ padding: '12px', cursor: 'pointer', borderRadius: '5px', background: active ? 'var(--primary-color)' : 'transparent', color: active ? 'white' : 'black', marginBottom: '5px' }),
+        kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' },
+        inputGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
+        label: { fontWeight: 'bold', fontSize: '0.9rem', color: '#1a365d' },
+        input: { padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e0', fontSize: '1rem', width: '100%' },
+        sidebarHeader: { position: 'relative', textAlign: 'center', marginBottom: '20px', cursor: 'pointer', padding: '10px', borderRadius: '10px', transition: 'background 0.2s' },
+        sidebarDropdown: { position: 'absolute', top: '100%', left: '0', right: '0', background: 'white', boxShadow: '0 5px 20px rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden', zIndex: 1000, marginTop: '5px' },
+        dropdownItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px', cursor: 'pointer', transition: 'background 0.2s', fontSize: '0.9rem', color: '#333', textAlign: 'left' },
     hero: {
       background: "linear-gradient(135deg, #023e8a 0%, #0077b6 100%)",
       color: "white",
@@ -291,19 +285,17 @@ const displayedEvents = showAllEvents ? events : events.slice(0, 2);
   };
 
   const thStyle = {
-  padding: '12px',
-  fontSize: '0.85rem',
-  fontWeight: 600,
-  color: '#374151'
-};
+    padding: "12px",
+    fontSize: "0.85rem",
+    fontWeight: 600,
+    color: "#374151",
+  };
 
-const tdStyle = {
-  padding: '12px',
-  fontSize: '0.85rem',
-  color: '#111827'
-};
-
-
+  const tdStyle = {
+    padding: "12px",
+    fontSize: "0.85rem",
+    color: "#111827",
+  };
 
   return (
     <div>
@@ -318,22 +310,6 @@ const tdStyle = {
           </p>
         </div>
       </header>
-
-      {/* Stats Overlay */}
-      {/* <div className="container" style={styles.statsRow}>
-                <div style={styles.statCard}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>{data?.stats?.averageAttendance || 0}%</h2>
-                    <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Attendance</p>
-                </div>
-                <div style={styles.statCard}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>₹{(data?.stats?.totalUtilized / 10000000).toFixed(1)}Cr+</h2>
-                    <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Funds Utilized</p>
-                </div>
-                <div style={styles.statCard}>
-                    <h2 style={{ fontSize: '2.5rem', color: '#0077b6', margin: 0 }}>{data?.stats?.totalProjects || 0}+</h2>
-                    <p style={{ margin: 0, color: '#666', fontWeight: '500' }}>Projects Completed</p>
-                </div>
-            </div> */}
 
       <div style={{ margin: "2px 2px 2rem ", textAlign: "center" }}>
         <h1 style={{ fontSize: "2rem" }}>{t("Public Insight Dashboard")}</h1>
@@ -414,8 +390,108 @@ const tdStyle = {
         >
           {t("Recent Projects")}
         </h2>
-        <div> 
-          <ProjectCardSection data={data}/>
+        <div>
+          <ProjectCardSection data={data} />
+          <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+            gap: "16px",
+          }}
+        >
+          {(data?.projects || []).length === 0 ? (
+            <div
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "12px",
+                textAlign: "center",
+              }}
+            >
+              No projects found
+            </div>
+          ) : (
+            [...data.projects]
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // recent first
+              .map((project) => (
+                <div
+                  key={project._id}
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: "16px",
+                    padding: "20px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  {/* Title */}
+                  <h4 style={{ margin: 0 }}>{project.title}</h4>
+
+                  {/* Description */}
+                  <p
+                    style={{ margin: 0, color: "#6B7280", fontSize: "0.9rem" }}
+                  >
+                    {project.description}
+                  </p>
+
+                  {/* Allocated */}
+                  <div style={{ fontWeight: 600 }}>
+                    ₹{(project.fundsAllocated || 0).toLocaleString()}
+                  </div>
+
+                  {/* Status */}
+                  <span
+                    style={{
+                      alignSelf: "flex-start",
+                      padding: "4px 10px",
+                      borderRadius: "8px",
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      backgroundColor:
+                        project.status === "approved"
+                          ? "#DCFCE7"
+                          : project.status === "pending"
+                            ? "#FEF3C7"
+                            : "#FEE2E2",
+                      color:
+                        project.status === "approved"
+                          ? "#166534"
+                          : project.status === "pending"
+                            ? "#92400E"
+                            : "#991B1B",
+                    }}
+                  >
+                    {project.status}
+                  </span>
+
+                  {/* Dates */}
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#6B7280",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span>
+                      Start:{" "}
+                      {project.startDate
+                        ? new Date(project.startDate).toLocaleDateString()
+                        : "-"}
+                    </span>
+
+                    <span>
+                      Created:{" "}
+                      {new Date(project.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
+
 
         </div>
         {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -524,226 +600,144 @@ const tdStyle = {
         </table> */}
 
         {/* PROJECT CARD VIEW */}
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-    gap: "16px",
-  }}
->
-  {(data?.projects || []).length === 0 ? (
-    <div
-      style={{
-        background: "#fff",
-        padding: "20px",
-        borderRadius: "12px",
-        textAlign: "center",
-      }}
-    >
-      No projects found
-    </div>
-  ) : (
-    [...data.projects]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // recent first
-      .map((project) => (
+        
+
+        <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>
+          Upcoming Events
+        </h2>
+
         <div
-          key={project._id}
           style={{
-            backgroundColor: "#FFFFFF",
-            borderRadius: "16px",
-            padding: "20px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: "1.5rem",
+            marginBottom: "1rem",
           }}
         >
-          {/* Title */}
-          <h4 style={{ margin: 0 }}>{project.title}</h4>
+          {displayedEvents.map((ev) => (
+            <div
+              key={ev._id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "8px",
+                overflow: "hidden",
+                backgroundColor: "white",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-4px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
+            >
+              {/* Event Image */}
+              {ev.image && (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "200px",
+                    overflow: "hidden",
+                    backgroundColor: "#f0f0f0",
+                  }}
+                >
+                  <img
+                    src={ev.image}
+                    alt={ev.category}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              )}
 
-          {/* Description */}
-          <p style={{ margin: 0, color: "#6B7280", fontSize: "0.9rem" }}>
-            {project.description}
-          </p>
+              {/* Event Details */}
+              <div style={{ padding: "1rem" }}>
+                <h4
+                  style={{
+                    margin: "0 0 0.75rem 0",
+                    fontSize: "1.25rem",
+                    color: "#333",
+                  }}
+                >
+                  {ev.category}
+                </h4>
 
-          {/* Allocated */}
-          <div style={{ fontWeight: 600 }}>
-            ₹{(project.fundsAllocated || 0).toLocaleString()}
-          </div>
+                <p
+                  style={{
+                    margin: "0.5rem 0",
+                    color: "#666",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  📅 {new Date(ev.date).toLocaleDateString()}
+                </p>
 
-          {/* Status */}
-          <span
-            style={{
-              alignSelf: "flex-start",
-              padding: "4px 10px",
-              borderRadius: "8px",
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              backgroundColor:
-                project.status === "approved"
-                  ? "#DCFCE7"
-                  : project.status === "pending"
-                  ? "#FEF3C7"
-                  : "#FEE2E2",
-              color:
-                project.status === "approved"
-                  ? "#166534"
-                  : project.status === "pending"
-                  ? "#92400E"
-                  : "#991B1B",
-            }}
-          >
-            {project.status}
-          </span>
+                <p
+                  style={{
+                    margin: "0.5rem 0",
+                    color: "#666",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  ⏰ {ev.time}
+                </p>
 
-          {/* Dates */}
-          <div
-            style={{
-              fontSize: "0.8rem",
-              color: "#6B7280",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>
-              Start:{" "}
-              {project.startDate
-                ? new Date(project.startDate).toLocaleDateString()
-                : "-"}
-            </span>
+                <p
+                  style={{
+                    margin: "0.5rem 0",
+                    color: "#666",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  📍 {ev.location}
+                </p>
 
-            <span>
-              Created:{" "}
-              {new Date(project.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-      ))
-  )}
-</div>
-
-
- <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>Upcoming Events</h2>
-    
-    <div style={{ 
-      display: "grid", 
-      gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", 
-      gap: "1.5rem",
-      marginBottom: "1rem"
-    }}>
-      {displayedEvents.map((ev) => (
-        <div 
-          key={ev._id} 
-          style={{ 
-            border: "1px solid #ddd", 
-            borderRadius: "8px",
-            overflow: "hidden",
-            backgroundColor: "white",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            transition: "transform 0.2s",
-            cursor: "pointer"
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-4px)"}
-          onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
-        >
-          {/* Event Image */}
-          {ev.image && (
-            <div style={{ 
-              width: "100%", 
-              height: "200px", 
-              overflow: "hidden",
-              backgroundColor: "#f0f0f0"
-            }}>
-              <img 
-                src={ev.image} 
-                alt={ev.category}
-                style={{ 
-                  width: "100%", 
-                  height: "100%", 
-                  objectFit: "cover"
-                }}
-              />
+                {ev.description && (
+                  <p
+                    style={{
+                      margin: "0.75rem 0 0 0",
+                      color: "#555",
+                      fontSize: "0.85rem",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    {ev.description.length > 100
+                      ? `${ev.description.substring(0, 100)}...`
+                      : ev.description}
+                  </p>
+                )}
+              </div>
             </div>
-          )}
-          
-          {/* Event Details */}
-          <div style={{ padding: "1rem" }}>
-            <h4 style={{ 
-              margin: "0 0 0.75rem 0",
-              fontSize: "1.25rem",
-              color: "#333"
-            }}>
-              {ev.category}
-            </h4>
-            
-            <p style={{ 
-              margin: "0.5rem 0",
-              color: "#666",
-              fontSize: "0.9rem"
-            }}>
-              📅 {new Date(ev.date).toLocaleDateString()}
-            </p>
-            
-            <p style={{ 
-              margin: "0.5rem 0",
-              color: "#666",
-              fontSize: "0.9rem"
-            }}>
-              ⏰ {ev.time}
-            </p>
-            
-            <p style={{ 
-              margin: "0.5rem 0",
-              color: "#666",
-              fontSize: "0.9rem"
-            }}>
-              📍 {ev.location}
-            </p>
-            
-            {ev.description && (
-              <p style={{ 
-                margin: "0.75rem 0 0 0",
-                color: "#555",
-                fontSize: "0.85rem",
-                lineHeight: "1.4"
-              }}>
-                {ev.description.length > 100 
-                  ? `${ev.description.substring(0, 100)}...` 
-                  : ev.description}
-              </p>
-            )}
-          </div>
+          ))}
         </div>
-      ))}
-    </div>
 
-    {/* View More Button */}
-    {events.length > 1 && (
-      <div style={{ textAlign: "center", marginTop: "1rem" }}>
-        <button
-          onClick={() => setShowAllEvents(!showAllEvents)}
-          style={{
-            padding: "0.75rem 2rem",
-            fontSize: "1rem",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            transition: "background-color 0.2s"
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = "#0056b3"}
-          onMouseLeave={(e) => e.target.style.backgroundColor = "#007bff"}
-        >
-          {showAllEvents ? "Show Less" : `View More`}
-        </button>
-      </div>
-    )}
-
-
-
-
-
+        {/* View More Button */}
+        {events.length > 1 && (
+          <div style={{ textAlign: "center", marginTop: "1rem" }}>
+            <button
+              onClick={() => setShowAllEvents(!showAllEvents)}
+              style={{
+                padding: "0.75rem 2rem",
+                fontSize: "1rem",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
+            >
+              {showAllEvents ? "Show Less" : `View More`}
+            </button>
+          </div>
+        )}
 
         {/* Approved Schedules */}
         <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>
@@ -777,9 +771,5 @@ const tdStyle = {
     </div>
   );
 };
-
-
-
-
 
 export default PublicDashboard;
