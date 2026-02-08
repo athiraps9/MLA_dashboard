@@ -49,34 +49,16 @@ const AdminDashboard = () => {
   });
   const [events, setEvents] = useState([]);
 
-  const fetchAdmins = async () => {
-    try {
-      const res = await api.get("/pa/admins");
-      setAdmins(res.data);
-      if (res.data.length > 0) {
-        const defaultAdminId = res.data[0]._id;
-        setScheduleForm((prev) => ({ ...prev, adminId: defaultAdminId }));
-        fetchBusyDates(defaultAdminId);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  
-
-
-
-
-  const [scheduleForm, setScheduleForm] = useState({
-      date: "",
-      time: "",
-      venue: "",
-      scheduleType: "",
-      description: "",
-      adminId: "",
-      
-    });
+ 
+  const user = JSON.parse(localStorage.getItem("user"));
+const [scheduleForm, setScheduleForm] = useState({
+  date: "",
+  time: "",
+  venue: "",
+  scheduleType: "",
+  description: "",
+  adminId: user?._id || "",
+});
 
   const [showAllEvents, setShowAllEvents] = useState(false);
   const displayedEvents = showAllEvents
@@ -86,6 +68,7 @@ const AdminDashboard = () => {
   // State for pending items
 
   useEffect(() => {
+    console.log(user,"admin id getting here");
     fetchPending();
   }, []);
 
@@ -387,7 +370,7 @@ const AdminDashboard = () => {
    const handleScheduleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/pa/schedule", scheduleForm);
+      await api.post("/admin/schedule", scheduleForm);
       alert("Schedule created successfully!");
       setScheduleForm({
         date: "",
@@ -395,6 +378,7 @@ const AdminDashboard = () => {
         venue: "",
         scheduleType: "",
         description: "",
+
       
       });
       fetchSchedules();

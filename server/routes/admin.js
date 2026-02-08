@@ -164,6 +164,42 @@ router.get('/schedules', auth(['admin']), ensureAdmin, async (req, res) => {
     }
 });
 
+
+router.post('/schedule', auth(), async (req, res) => {
+    try {
+        const { date, time, venue, scheduleType, description, adminId } = req.body;
+
+        // Validate admin exists
+        const admin = await User.findById(adminId);
+        if (!admin || admin.role !== 'admin') {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        // Create schedule
+        const schedule = new Schedule({
+            date,
+            time,
+            venue,
+            scheduleType,
+            description,
+            admin: adminId,
+            createdBy: req.user.id,
+            status: 'Pending'
+        });
+
+        await schedule.save();
+
+        const populatedSchedule = await Schedule.findById(schedule._id)
+            .populate('admin', 'fullName')
+            .populate('createdBy', 'fullName');
+
+        res.json(populatedSchedule);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message || 'Server error' });
+    }
+});
+
 // GET /admin/schedules/today - Get today's schedules
 router.get('/schedules/today', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
