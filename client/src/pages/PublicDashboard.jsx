@@ -15,6 +15,7 @@ import Card from "../components/Card";
 import ScheduleCard from "../components/ScheduleCard";
 import { Link } from "react-router-dom";
 import "../styles/variables.css";
+import EventCardSection from '../components/EventCardSection';
 import {
   FaProjectDiagram,
   FaRupeeSign,
@@ -43,6 +44,13 @@ const PublicDashboard = () => {
     projects: [],
     attendance: [],
     events: [],
+    
+
+
+
+
+
+    
   });
   const [loading, setLoading] = useState(true);
   const [attendancePercentage, setAttendancePercentage] = useState(0);
@@ -501,142 +509,18 @@ const PublicDashboard = () => {
         {/* PROJECT CARD VIEW */}
         
 
-        <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>
-          Upcoming Events
-        </h2>
+       
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "1.5rem",
-            marginBottom: "1rem",
-          }}
-        >
-          {displayedEvents.map((ev) => (
-            <div
-              key={ev._id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                overflow: "hidden",
-                backgroundColor: "white",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                transition: "transform 0.2s",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.transform = "translateY(-4px)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
-            >
-              {/* Event Image */}
-              {ev.image && (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "200px",
-                    overflow: "hidden",
-                    backgroundColor: "#f0f0f0",
-                  }}
-                >
-                  <img
-                    src={ev.image}
-                    alt={ev.category}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Event Details */}
-              <div style={{ padding: "1rem" }}>
-                <h4
-                  style={{
-                    margin: "0 0 0.75rem 0",
-                    fontSize: "1.25rem",
-                    color: "#333",
-                  }}
-                >
-                  {ev.category}
-                </h4>
-
-                <p
-                  style={{
-                    margin: "0.5rem 0",
-                    color: "#666",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  📅 {new Date(ev.date).toLocaleDateString()}
-                </p>
-
-                <p
-                  style={{
-                    margin: "0.5rem 0",
-                    color: "#666",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  ⏰ {ev.time}
-                </p>
-
-                <p
-                  style={{
-                    margin: "0.5rem 0",
-                    color: "#666",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  📍 {ev.location}
-                </p>
-
-                {ev.description && (
-                  <p
-                    style={{
-                      margin: "0.75rem 0 0 0",
-                      color: "#555",
-                      fontSize: "0.85rem",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    {ev.description.length > 100
-                      ? `${ev.description.substring(0, 100)}...`
-                      : ev.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
+        <div>
+          <section>
+        <h2 style={{
+        fontSize: "1.5rem"}}>Upcoming Events</h2>
+        <EventCardSection data={data} />
+      </section>
         </div>
 
         {/* View More Button */}
-        {events.length > 1 && (
-          <div style={{ textAlign: "center", marginTop: "1rem" }}>
-            <button
-              onClick={() => setShowAllEvents(!showAllEvents)}
-              style={{
-                padding: "0.75rem 2rem",
-                fontSize: "1rem",
-                backgroundColor: "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
-            >
-              {showAllEvents ? "Show Less" : `View More`}
-            </button>
-          </div>
-        )}
+       
 
         {/* Approved Schedules */}
         <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>
