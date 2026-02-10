@@ -28,6 +28,9 @@ import { useLanguage } from "../context/LanguageContext";
 
 import DetailedView from "../components/DetailedView";
 import ProjectCardSection from "../components/Projectcardsection";
+import ScheduleCardSection from "../components/ScheduleCardSection";
+import ComplaintForm from "../components/Complaintform";
+
 
 ChartJS.register(
   ArcElement,
@@ -44,14 +47,15 @@ const PublicDashboard = () => {
     projects: [],
     attendance: [],
     events: [],
-    
-
-
-
-
-
-    
+    schedules:[],
+     
   });
+
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+
+
   const [loading, setLoading] = useState(true);
   const [attendancePercentage, setAttendancePercentage] = useState(0);
   const [schedules, setSchedules] = useState([]);
@@ -78,6 +82,10 @@ const PublicDashboard = () => {
         // Fetch approved schedules
         const schedulesRes = await api.get("/data/schedules");
         setSchedules(schedulesRes.data);
+
+        //complaint form 
+
+       
 
         //Fetch all events
 
@@ -145,6 +153,16 @@ const PublicDashboard = () => {
       },
     ],
   };
+
+ const handleComplaintSubmit = async (complaintData)=>{
+  const id=user._id;
+
+  console.log(complaintData,"here complains submit");
+  await api.post(`/data/complaints/${id}`, complaintData);
+         } 
+
+
+
 
   const KPICard = ({ title, value, subtext, icon: Icon, color }) => (
     <div
@@ -523,33 +541,21 @@ const PublicDashboard = () => {
        
 
         {/* Approved Schedules */}
-        <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>
-          Approved Schedules
+        
+      <div>
+      <section>
+        <h2 style={{ fontSize: "1.5rem", marginBottom: "20px",marginTop:"20px" }}>
+          MLA Event Shedules
         </h2>
-        {schedules.length === 0 ? (
-          <p
-            style={{
-              textAlign: "center",
-              color: "var(--text-muted)",
-              padding: "2rem",
-            }}
-          >
-            No approved schedules available.
-          </p>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-              gap: "1.5rem",
-              marginBottom: "3rem",
-            }}
-          >
-            {schedules.map((schedule) => (
-              <ScheduleCard key={schedule._id} schedule={schedule} />
-            ))}
-          </div>
-        )}
+        <ScheduleCardSection data={{schedules}} />
+      </section>
+      </div>
+      <div>
+      <section style={{ marginBottom: '48px' }}>
+      <ComplaintForm onSubmit={handleComplaintSubmit} />
+      </section>
+      </div>
+      
       </div>
     </div>
   );

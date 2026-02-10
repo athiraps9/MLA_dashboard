@@ -13,7 +13,6 @@ import Chatbot from './components/Chatbot';
 import Footer from './components/Footer';
 import { LanguageProvider } from './context/LanguageContext';
 import PADashboard from './pages/PADashboard'; // New
-import UserDashboard from './pages/UserDashboard'; // New
 import AdminProfile from './pages/AdminProfile'; // New
 import ForgotPassword from './pages/ForgotPassword'; // Password Reset
 import ResetPassword from './pages/ResetPassword'; // Password Reset

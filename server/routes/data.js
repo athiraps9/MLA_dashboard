@@ -8,6 +8,7 @@ const Season = require('../models/Season');
 const Schedule = require('../models/Schedule');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
+const Complaint =require('../models/Complaint');
 
 
 // --- PUBLIC ROUTES ---
@@ -178,6 +179,32 @@ router.get('/public/schedules', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+
+
+
+
+router.post('/complaints/:id', async (req, res) => {
+  const user = req.params.id;
+  const { title, description } = req.body;
+
+  try {
+    const newComplaint = new Complaint({
+      user,
+      title,
+      description,
+    });
+
+    await newComplaint.save();
+
+    res.status(201).json(newComplaint);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 // Rate Projects, Schemes, or Events
 router.post('/public/:type/:id/rate', auth(['citizen', 'public', 'admin', 'mla', 'pa']), async (req, res) => {

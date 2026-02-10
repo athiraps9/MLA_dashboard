@@ -68,8 +68,8 @@ const ScheduleCardSection = ({ data }) => {
       }}
     >
       {/* Status Badge */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span
+      <div style={{ }}>
+        {/* <span
           style={{
             padding: '4px 10px',
             borderRadius: '8px',
@@ -90,11 +90,11 @@ const ScheduleCardSection = ({ data }) => {
         >
           <CheckCircle size={14} />
           {schedule.status}
-        </span>
-      </div>
+        </span> */}
+      
 
       {/* Title */}
-      <h4 style={{ 
+      {/* <h4 style={{ 
         margin: 0, 
         fontSize: '18px', 
         fontWeight: 600, 
@@ -107,7 +107,7 @@ const ScheduleCardSection = ({ data }) => {
         height: '100px',
       }}>
         {schedule.title}
-      </h4>
+      </h4> */}
 
       {/* Date & Time */}
       <div style={{
@@ -128,14 +128,14 @@ const ScheduleCardSection = ({ data }) => {
           </span>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Clock size={16} color="#059669" />
           <span style={{ fontSize: '14px', color: '#374151' }}>
             {schedule.time}
           </span>
-        </div>
+        </div> */}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px'}}>
           <MapPin size={16} color="#EF4444" />
           <span style={{ 
             fontSize: '14px', 
@@ -151,7 +151,7 @@ const ScheduleCardSection = ({ data }) => {
       </div>
 
       {/* Schedule Type Badge */}
-      <span
+      {/* <span
         style={{
           alignSelf: 'flex-start',
           padding: '4px 10px',
@@ -164,10 +164,10 @@ const ScheduleCardSection = ({ data }) => {
         }}
       >
         {schedule.scheduleType}
-      </span>
+      </span> */}
 
       {/* Description */}
-      {schedule.description && (
+      {/* {schedule.description && (
         <p style={{
           margin: 0,
           color: '#6B7280',
@@ -181,8 +181,8 @@ const ScheduleCardSection = ({ data }) => {
         }}>
           {schedule.description}
         </p>
-      )}
-
+      )} */}
+</div>
       {/* View Details Button */}
       {showViewButton && (
         <button
