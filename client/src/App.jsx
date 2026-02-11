@@ -17,6 +17,7 @@ import AdminProfile from './pages/AdminProfile'; // New
 import ForgotPassword from './pages/ForgotPassword'; // Password Reset
 import ResetPassword from './pages/ResetPassword'; // Password Reset
 import PublicDashboard from './pages/PublicDashboard';
+import AllProjects from './pages/AllProjects';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -76,6 +77,15 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
+             <Route path="/user/projects" element={
+                <ProtectedRoute role="public">
+                  <AllProjects/>
+                </ProtectedRoute>
+              } />
+
+
+
+
               <Route path="/complaints" element={
                 <ProtectedRoute>
                   <ComplaintPortal />
@@ -112,6 +122,10 @@ const App = () => {
                   <PADashboard />
                 </ProtectedRoute>
               } />
+
+
+
+
 
               {/* Old MLA Portal route - kept for legacy or redirect */}
               <Route path="/mla-portal" element={<Navigate to="/admin" />} />

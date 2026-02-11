@@ -27,9 +27,11 @@ import {
 import { useLanguage } from "../context/LanguageContext";
 
 import DetailedView from "../components/DetailedView";
-import ProjectCardSection from "../components/Projectcardsection";
+
 import ScheduleCardSection from "../components/ScheduleCardSection";
 import ComplaintForm from "../components/Complaintform";
+import ProjectCardSection from "../components/ProjectCardSection";
+
 
 
 ChartJS.register(
@@ -65,6 +67,9 @@ const PublicDashboard = () => {
   const [showAllEvents, setShowAllEvents] = useState(false);
 
   const displayedEvents = showAllEvents ? events : events.slice(0, 2);
+
+
+  const [showViewMore, setShowViewMore] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,7 +165,13 @@ const PublicDashboard = () => {
   console.log(complaintData,"here complains submit");
   await api.post(`/data/complaints/${id}`, complaintData);
          } 
+const handleOpenAllProjects = () => {
+  setShowViewMore(true);
+};
 
+const handleBackToGrid = () => {
+  setShowViewMore(false);
+};
 
 
 
@@ -344,7 +355,7 @@ const PublicDashboard = () => {
         </p>
       </div>
 
-      <div style={{ marginLeft: "20px", marginRight: "20px" }}>
+      <div style={{ marginLeft: "20px", marginRight: "20px"  }}>
         {/* KPI Cards */}
         <div
           style={{
@@ -353,13 +364,22 @@ const PublicDashboard = () => {
             gap: "1.5rem",
           }}
         >
+          <a href="/user/projects" >
           <KPICard
             title="Total Projects"
             value={data.projects.length}
             subtext={`${recentProjects.length} new this month`}
             icon={FaProjectDiagram}
-            color="#007bff"
+            color="#007bff" 
           />
+          </a>
+
+
+
+
+
+
+
           <KPICard
             title="Total Schemes"
             value={`0`}
@@ -551,7 +571,7 @@ const PublicDashboard = () => {
       </section>
       </div>
       <div>
-      <section style={{ marginBottom: '48px' }}>
+      <section style={{ marginBottom: '48px',marginTop:'48px' }}>
       <ComplaintForm onSubmit={handleComplaintSubmit} />
       </section>
       </div>
