@@ -2,6 +2,12 @@ import React, { useEffect, useState } from "react";
 
 /* ---------------- HELPERS ---------------- */
 
+
+
+
+
+
+
 const getLatestSeason = (seasons) => {
   return [...seasons].sort(
     (a, b) => new Date(b.startDate) - new Date(a.startDate)
@@ -19,14 +25,7 @@ const getDateRange = (start, end) => {
   return dates;
 };
 
-const mapAttendanceByDate = (list) => {
-  const map = {};
-  list.forEach((i) => {
-    const key = new Date(i.date).toISOString().split("T")[0];
-    map[key] = i.status === "Present" ? "P" : "A";
-  });
-  return map;
-};
+
 
 const getMonthHeader = (dates) => {
   if (!dates.length) return "";
@@ -63,6 +62,22 @@ export default function AttendanceReport({ seasons, allAttendance }) {
     fromDate: "",
     toDate: "",
   });
+
+
+
+const mapAttendanceByDate = (list) => {
+  const map = {};
+  list.forEach((i) => {
+    const key = new Date(i.date).toISOString().split("T")[0];
+    map[key] = i.status === "Present" ? "P" : "A";
+    
+  });
+  
+
+  return map;
+  
+};
+
 
   /* AUTO LOAD LATEST SEASON */
   useEffect(() => {
@@ -134,6 +149,7 @@ export default function AttendanceReport({ seasons, allAttendance }) {
           const monthHeader = getMonthHeader(dates);
 
           let totalPresent = 0;
+          let totalAbsent = 0;
 
           return (
             <div style={{ overflowX: "auto" }}>
@@ -170,6 +186,7 @@ export default function AttendanceReport({ seasons, allAttendance }) {
                       const status = attendanceMap[key] || "-";
 
                       if (status === "P") totalPresent++;
+                      if (status === "A") totalAbsent++;
 
                       return (
                         <td
@@ -190,7 +207,7 @@ export default function AttendanceReport({ seasons, allAttendance }) {
                       );
                     })}
 
-                    <td style={tdStyle}>{totalPresent}</td>
+                    <td style={tdStyle}>{totalPresent}/{totalPresent+totalAbsent}</td>
                   </tr>
                 </tbody>
               </table>

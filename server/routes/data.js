@@ -181,6 +181,22 @@ router.get('/public/schedules', async (req, res) => {
 });
 
 
+//Get all complaints 
+
+router.get('/complaints', async (req, res) => {
+  try {
+    const complaints = await Complaint.find()
+      .populate('user', 'name email') // optional
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(complaints);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 
 
 

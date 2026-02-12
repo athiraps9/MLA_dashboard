@@ -9,6 +9,7 @@ const Project = require('../models/Project');
 const Scheme = require('../models/Scheme');
 const Event = require('../models/Event');
 const Complaint = require('../models/Complaint');
+const Category=require('../models/Category');
 const User = require('../models/User');
 const fs = require('fs');
 const path = require('path');
@@ -545,6 +546,40 @@ router.get('/admin-busy-dates/:adminId', auth(), ensurePA, async (req, res) => {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+
+// CREATE CATEGORY
+router.post("/addcategory", async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    const existing = await Category.findOne({ name });
+    if (existing) {
+      return res.status(400).json({ message: "Category already exists" });
+    }
+
+    const category = new Category({
+      name,
+      
+    });
+
+    await category.save();
+
+    res.status(201).json(category);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET ALL CATEGORIES
+router.get("/category", async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ createdAt: -1 });
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 module.exports = router;

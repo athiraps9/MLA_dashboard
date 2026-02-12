@@ -106,6 +106,11 @@ const ScheduleCard = ({ schedule, onApprove, onCancel, showActions = false }) =>
             color: 'white',
             boxShadow: `0 4px 6px ${type === 'approve' ? 'rgba(72,187,120,0.2)' : 'rgba(245,101,101,0.2)'}`
         })
+
+
+
+        
+
     };
 
     const formatDate = (date) => {
@@ -190,6 +195,51 @@ const ScheduleCard = ({ schedule, onApprove, onCancel, showActions = false }) =>
                     )}
                 </div>
             )}
+
+
+            <div style={{display:"flex"}}>
+
+                  <button
+            onClick={() => handleEdit(p)}
+             style ={{
+               fontSize: "20px",
+              color: "navy",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+             }}
+          
+            
+            onMouseOver={(e) => e.target.style.opacity = "0.8"}
+            onMouseOut={(e) => e.target.style.opacity = "1"}
+            
+          >
+            
+             <i className="fas fa-pencil-alt"></i>
+          </button>
+             
+
+              <button
+            onClick={() => handleDelete(p._id)}
+             style ={{
+               fontSize: "20px",
+              color: "navy",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px",
+             }}
+           
+            onMouseOver={(e) => e.target.style.opacity = "0.8"}
+            onMouseOut={(e) => e.target.style.opacity = "1"}
+          >
+            <i className="fas fa-trash-alt"></i>
+          </button>
+
+
+
+            </div>
         </div>
     );
 };

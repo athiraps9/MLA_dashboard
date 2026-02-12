@@ -254,7 +254,6 @@ const PaProfile = () => {
                                     ) : (
                                         <>
                                             <h2 style={{ fontSize: '30px', fontWeight: 900, color: '#1E1B4B', margin: 0, letterSpacing: '-0.5px' }}>{profileData.fullName || 'Not Set'}</h2>
-                                            <p style={{ color: '#6366F1', fontWeight: 800, fontSize: '12px', marginTop: '12px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Member of Legislative Assembly</p>
                                         </>
                                     )}
 

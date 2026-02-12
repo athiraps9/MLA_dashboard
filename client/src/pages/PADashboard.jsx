@@ -25,8 +25,14 @@ const PADashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef(null);
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState("");
   const [editingId, setEditingId] = useState(null);
+
+  //categories
+
+  const [categories, setCategories] = useState([]);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
 
   // Attendance State
   const [seasons, setSeasons] = useState([]);
@@ -59,37 +65,34 @@ const PADashboard = () => {
   // Project State
   const [projects, setProjects] = useState([]);
   const [projectForm, setProjectForm] = useState({
-   projectNumber: '',
-        title: '',
-        description: '',
-        category: '',
-        constituency: '',
-        startDate: '',
-        endDate: '',
-        fundsAllocated: '',
-        projectImage: null
+    projectNumber: "",
+    title: "",
+    description: "",
+    category: "",
+    constituency: "",
+    startDate: "",
+    endDate: "",
+    fundsAllocated: "",
+    projectImage: null,
   });
 
-
-
   // Category and Constituency options
-    const categories = ['SDF', 'ADF', 'ROAD'];
-    const constituencies = [
-        'Perinthal Manna',
-        'Melatoor',
-        'Manjeri',
-        'Malappuram',
-        'Vengara',
-        'Vallikkunnu',
-        'Tirurangadi',
-        'Tanur',
-        'Tirur',
-        'Kottakkal',
-        'Thavanur',
-        'Ponnani',
-        'Thrithala'
-    ];
-
+  //const categories = ['SDF', 'ADF', 'ROAD'];
+  const constituencies = [
+    "Perinthal Manna",
+    "Melatoor",
+    "Manjeri",
+    "Malappuram",
+    "Vengara",
+    "Vallikkunnu",
+    "Tirurangadi",
+    "Tanur",
+    "Tirur",
+    "Kottakkal",
+    "Thavanur",
+    "Ponnani",
+    "Thrithala",
+  ];
 
   // Schemes State
   const [schemes, setSchemes] = useState([]);
@@ -146,6 +149,7 @@ const PADashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    fetchCategories();
     if (user) {
       setPreviewUrl(user.avatar ? `${SERVER_URL}${user.avatar}` : null);
       setEditData({
@@ -177,6 +181,26 @@ const PADashboard = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("pa/category");
+      setCategories(res.data.map((cat) => cat.name));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    try {
+      await api.post("pa/addcategory", { name: newCategory });
+      setNewCategory("");
+      setShowCategoryModal(false);
+      fetchCategories(); // refresh dropdown
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const fetchAttendance = async () => {
     try {
       const res = await api.get("/pa/attendance/pending");
@@ -190,7 +214,7 @@ const PADashboard = () => {
     try {
       const res = await api.get("/pa/projects");
       setProjects(res.data);
-      console.log("line number 193",res);
+      console.log("line number 193", res);
     } catch (err) {
       console.error(err);
     }
@@ -198,7 +222,7 @@ const PADashboard = () => {
 
   const fetchComplaints = async () => {
     try {
-      const res = await api.get("/pa/complaints");
+      const res = await api.get("/data/complaints");
       setComplaints(res.data);
     } catch (err) {
       console.error(err);
@@ -371,136 +395,133 @@ const PADashboard = () => {
     }
   };
 
-    const handleProjectSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
+  const handleProjectSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
-        try {
-            const formData = new FormData();
-            Object.keys(projectForm).forEach(key => {
-                if (projectForm[key] !== null && projectForm[key] !== '') {
-                    formData.append(key, projectForm[key]);
-                }
-            });
-
-            if (editingId) {
-                // Update existing project
-                await api.put(`/pa/projects/${editingId}`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                setSuccess('Project updated successfully!');
-                setEditingId(null);
-            } else {
-                // Create new project
-                
-              
-
-
-                await api.post('pa/projects', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                setSuccess('Project created successfully!');
-            }
-
-
-
-
-            // Reset form
-            setProjectForm({
-                projectNumber: '',
-                title: '',
-                description: '',
-                category: '',
-                constituency: '',
-                startDate: '',
-                endDate: '',
-                fundsAllocated: '',
-                projectImage: null
-            });
-            
-            // Clear file input
-            const fileInput = document.querySelector('input[type="file"]');
-            if (fileInput) fileInput.value = '';
-
-            fetchProjects();
-        } catch (err) {
-            setError(err.response?.data?.message || `Failed to ${editingId ? 'update' : 'create'} project`);
-            console.error('Project submit error:', err);
+    try {
+      const formData = new FormData();
+      Object.keys(projectForm).forEach((key) => {
+        if (projectForm[key] !== null && projectForm[key] !== "") {
+          formData.append(key, projectForm[key]);
         }
-    };
+      });
 
-    const handleEdit = (project) => {
-        setEditingId(project._id);
-        setProjectForm({
-            projectNumber: project.projectNumber || '',
-            title: project.title || '',
-            description: project.description || '',
-            category: project.category || '',
-            constituency: project.constituency || '',
-            startDate: project.startDate ? project.startDate.split('T')[0] : '',
-            endDate: project.endDate ? project.endDate.split('T')[0] : '',
-            fundsAllocated: project.fundsAllocated || '',
-            projectImage: null // Don't pre-populate file
+      if (editingId) {
+        // Update existing project
+        await api.put(`/pa/projects/${editingId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
-
-        
-        setError('');
-        setSuccess('');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleCancelEdit = () => {
+        setSuccess("Project updated successfully!");
         setEditingId(null);
-        setProjectForm({
-            projectNumber: '',
-            title: '',
-            description: '',
-            category: '',
-            constituency: '',
-            startDate: '',
-            endDate: '',
-            fundsAllocated: '',
-            projectImage: null
+      } else {
+        // Create new project
+
+        await api.post("pa/projects", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        setError('');
-        setSuccess('');
-        
-        // Clear file input
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) fileInput.value = '';
-    };
+        setSuccess("Project created successfully!");
+      }
 
-    const handleDelete = async (id) => {
-  // Shows confirmation dialog
-  if (!window.confirm('Are you sure?')) return;
-  
-  // Deletes from database
-  await api.delete(`/pa/projects/${id}`);
-  
-  // Updates view immediately (removes from UI)
-  setProjects(prevProjects => prevProjects.filter(project => project._id !== id));
-  
-  // Shows success message
-  setSuccess('Project deleted successfully!');
-};
+      // Reset form
+      setProjectForm({
+        projectNumber: "",
+        title: "",
+        description: "",
+        category: "",
+        constituency: "",
+        startDate: "",
+        endDate: "",
+        fundsAllocated: "",
+        projectImage: null,
+      });
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-        }).format(amount);
-    };
+      // Clear file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = "";
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-IN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
+      fetchProjects();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          `Failed to ${editingId ? "update" : "create"} project`,
+      );
+      console.error("Project submit error:", err);
+    }
+  };
 
+  const handleEdit = (project) => {
+    setEditingId(project._id);
+    setProjectForm({
+      projectNumber: project.projectNumber || "",
+      title: project.title || "",
+      description: project.description || "",
+      category: project.category || "",
+      constituency: project.constituency || "",
+      startDate: project.startDate ? project.startDate.split("T")[0] : "",
+      endDate: project.endDate ? project.endDate.split("T")[0] : "",
+      fundsAllocated: project.fundsAllocated || "",
+      projectImage: null, // Don't pre-populate file
+    });
+
+    setError("");
+    setSuccess("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setProjectForm({
+      projectNumber: "",
+      title: "",
+      description: "",
+      category: "",
+      constituency: "",
+      startDate: "",
+      endDate: "",
+      fundsAllocated: "",
+      projectImage: null,
+    });
+    setError("");
+    setSuccess("");
+
+    // Clear file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = "";
+  };
+
+  const handleDelete = async (id) => {
+    // Shows confirmation dialog
+    if (!window.confirm("Are you sure?")) return;
+
+    // Deletes from database
+    await api.delete(`/pa/projects/${id}`);
+
+    // Updates view immediately (removes from UI)
+    setProjects((prevProjects) =>
+      prevProjects.filter((project) => project._id !== id),
+    );
+
+    // Shows success message
+    setSuccess("Project deleted successfully!");
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const handleSchemeSubmit = async (e) => {
     e.preventDefault();
@@ -689,24 +710,52 @@ const PADashboard = () => {
       color: "#1a365d",
       marginBottom: "4px",
     },
-    
-        
-        input: {
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '0.95rem'
-        },
-        select: {
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '0.95rem',
-            backgroundColor: 'white',
-            cursor: 'pointer'
-        },
-        
+
+    input: {
+      padding: "10px",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
+      fontSize: "0.95rem",
+    },
+    select: {
+      padding: "10px",
+      border: "1px solid #ddd",
+      borderRadius: "4px",
+      fontSize: "0.95rem",
+      backgroundColor: "white",
+      cursor: "pointer",
+      maxWidth: "80%",
+    },
   };
+
+
+
+  const modalStyles = {
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modal: {
+    
+    padding: "20px",
+    borderRadius: "8px",
+    width: "300px",
+    background: "#d5f4e6",
+    border:"30px",
+    
+  },
+  input: {
+    width: "100%",
+    padding: "8px",
+    marginTop: "10px",
+  },
+};
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -746,15 +795,43 @@ const PADashboard = () => {
     return titles[activeTab] || "Dashboard";
   };
 
+  //Handle Delete and Edit Functions for Attendance
 
+  //   const handleDelete = async (id) => {
+  //   // Shows confirmation dialog
+  //   if (!window.confirm('Are you sure?')) return;
 
+  //   // Deletes from database
+  //   await api.delete(`/pa/projects/${id}`);
 
+  //   // Updates view immediately (removes from UI)
+  //   setProjects(prevProjects => prevProjects.filter(project => project._id !== id));
 
+  //   // Shows success message
+  //   setSuccess('Project deleted successfully!');
 
+  // };
 
+  // handleEdit
 
+  //  const handleEdit = (project) => {
+  //         setEditingId(project._id);
+  //         setProjectForm({
+  //             projectNumber: project.projectNumber || '',
+  //             title: project.title || '',
+  //             description: project.description || '',
+  //             category: project.category || '',
+  //             constituency: project.constituency || '',
+  //             startDate: project.startDate ? project.startDate.split('T')[0] : '',
+  //             endDate: project.endDate ? project.endDate.split('T')[0] : '',
+  //             fundsAllocated: project.fundsAllocated || '',
+  //             projectImage: null // Don't pre-populate file
+  //         });
 
-  
+  //         setError('');
+  //         setSuccess('');
+  //         window.scrollTo({ top: 0, behavior: 'smooth' });
+  //     };
 
   return (
     <div
@@ -1127,6 +1204,7 @@ const PADashboard = () => {
                   padding: "32px",
                   boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
                   marginBottom: "32px",
+                  maxWidth: "700px",
                 }}
               >
                 <h3
@@ -1378,21 +1456,66 @@ const PADashboard = () => {
                           {p.remarks}
                         </div>
                       )}
+                      <div style={{ display: "flex" }}>
+                        <button
+                          onClick={() => handleEditForPendingVerification()}
+                          style={{
+                            fontSize: "20px",
+                            color: "navy",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "6px",
+                          }}
+                          onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                          onMouseOut={(e) => (e.target.style.opacity = "1")}
+                        >
+                          <i className="fas fa-pencil-alt"></i>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteForPendingVerification()}
+                          style={{
+                            fontSize: "20px",
+                            color: "navy",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "6px",
+                          }}
+                          onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                          onMouseOut={(e) => (e.target.style.opacity = "1")}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
+              <div></div>
             </div>
           )}
           {activeTab === "scheduling" && (
-            <div>
-              <h2 style={{ marginBottom: "20px" }}>Schedule Management</h2>
+            <div style={{}}>
+              
 
               {/* Create Schedule Form */}
-              <Card title="Create New Schedule">
+              <div >
+                <h2 style={{ marginBottom: "15px" }}>Schedule Management</h2>
+                
+              <Card title="Create New Schedule "  >
+            <div
+            style={{
+              display: "flex",
+              gap: "2px",
+              alignItems: "flex-start",
+            }}>
+
+              <div style={{ flex: 1  ,maxWidth:"460px"}}>
+
                 <form
                   onSubmit={handleScheduleSubmit}
-                  style={{ display: "grid", gap: "15px", maxWidth: "600px" }}
+                  style={{ display: "grid", gap: "15px", maxWidth: "400px" }}
                 >
                   {admins.length > 0 && (
                     <div
@@ -1562,12 +1685,15 @@ const PADashboard = () => {
                   </div>
                   <Button type="submit">Create Schedule</Button>
                 </form>
-              </Card>
-
+                </div>
+                
+                
+                 <div className="second" style={{flex: 1}}>
+            
               {/* Calendar View */}
-              <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
+              {/* <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
                 Calendar View
-              </h3>
+              </h3> */}
               <SimpleCalendar
                 schedules={schedules}
                 busyDates={busyDates}
@@ -1580,6 +1706,15 @@ const PADashboard = () => {
                   }
                 }}
               />
+
+                 
+                </div>
+                </div>
+              </Card>
+             
+              </div>
+
+            
 
               {/* My Schedules */}
               <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
@@ -1674,25 +1809,71 @@ const PADashboard = () => {
                         </div>
 
                         <div style={styles.inputGroup}>
-                          <label style={styles.label}>Category *</label>
-                          <select
-                            style={styles.select}
-                            value={projectForm.category}
-                            onChange={(e) =>
-                              setProjectForm({
-                                ...projectForm,
-                                category: e.target.value,
-                              })
-                            }
-                            required
-                          >
-                            <option value="">Select Category</option>
-                            {categories.map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat}
-                              </option>
-                            ))}
-                          </select>
+                          <div>
+                            <label style={styles.label}>Category *</label>
+                          </div>
+                          <div>
+                            <select
+                              style={styles.select}
+                              value={projectForm.category}
+                              onChange={(e) =>
+                                setProjectForm({
+                                  ...projectForm,
+                                  category: e.target.value,
+                                })
+                              }
+                              required
+                            >
+                              <option value="">Select Category</option>
+                              {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                            </select>
+                            <button style={{width:"40px",height:"40px" ,marginRight:"10px",background:"#10B981"}}
+                              type="button"
+                              onClick={() => setShowCategoryModal(true) }
+                            >
+                              Add
+                            </button>
+                            {showCategoryModal && (
+                              <div style={modalStyles.overlay}>
+                                <div style={modalStyles.modal}>
+                                  <h3>Add New Category</h3>
+
+                                  <input
+                                    type="text"
+                                    value={newCategory}
+                                    onChange={(e) =>
+                                      setNewCategory(e.target.value)
+                                    }
+                                    placeholder="Enter category name"
+                                    style={modalStyles.input}
+                                  />
+
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "10px",
+                                      marginTop: "15px",
+                                    }}
+                                  >
+                                    <button onClick={handleAddCategory}>
+                                      Submit
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        setShowCategoryModal(false)
+                                      }
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1729,7 +1910,7 @@ const PADashboard = () => {
                       </div>
 
                       {/* Constituency */}
-                      <div style={styles.inputGroup}>
+                      {/* <div style={styles.inputGroup}>
                         <label style={styles.label}>Constituency *</label>
                         <select
                           style={styles.select}
@@ -1742,14 +1923,14 @@ const PADashboard = () => {
                           }
                           required
                         >
-                          <option value="">Select Constituency</option>
+                           <option value="">Select Constituency</option> 
                           {constituencies.map((c) => (
                             <option key={c} value={c}>
                               {c}
                             </option>
                           ))}
                         </select>
-                      </div>
+                      </div> */}
 
                       {/* Dates */}
                       <div
@@ -1827,7 +2008,7 @@ const PADashboard = () => {
                         </Button>
 
                         {editingId && (
-                          <Button  type="button" onClick={handleCancelEdit}>
+                          <Button type="button" onClick={handleCancelEdit}>
                             Cancel
                           </Button>
                         )}
@@ -1863,118 +2044,114 @@ const PADashboard = () => {
               <div>
                 <h3>Project Status Management</h3>
                 <div style={{ display: "grid", gap: "1rem" }}>
-    {projects.map((p) => (
-      <Card key={p._id} title={p.title}>
-        {p.imageUrl && (
-          <img
-            src={`${SERVER_URL}${p.imageUrl}`}
-            alt={p.title}
-            style={{
-              width: "100%",
-              height: "150px",
-              objectFit: "cover",
-              borderRadius: "8px",
-              marginBottom: "10px",
-            }}
-          />
-        )}
-        
-        <div style={{ marginBottom: "1rem" }}>
-          <span
-            style={{
-              padding: "4px 8px",
-              borderRadius: "4px",
-              fontSize: "0.8rem",
-              background:
-                p.status === "approved"
-                  ? "#C6F6D5"
-                  : p.status === "pending"
-                    ? "#FEEBC8"
-                    : "#FED7D7",
-              color:
-                p.status === "approved"
-                  ? "#22543D"
-                  : p.status === "pending"
-                    ? "#744210"
-                    : "#822727",
-            }}
-          >
-            {p.status.toUpperCase()}
-          </span>
-        </div>
-        
-        <div style={{ display: "flex", gap: "10px", marginBottom: "10px", }}>
-          <Button
-            variant="outline"
-            size="small"
-            onClick={() => handleProjectUpdate(p._id, "in-progress")}
-          >
-            Mark In Progress
-          </Button>
-          <Button
-            variant="outline"
-            size="small"
-            onClick={() => handleProjectUpdate(p._id, "completed")}
-          >
-            Mark Completed
-          </Button>
-        </div>
+                  {projects.map((p) => (
+                    <Card key={p._id} title={p.title}>
+                      {p.imageUrl && (
+                        <img
+                          src={`${SERVER_URL}${p.imageUrl}`}
+                          alt={p.title}
+                          style={{
+                            width: "100%",
+                            height: "150px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            marginBottom: "10px",
+                          }}
+                        />
+                      )}
 
-        {/* NEW: Edit and Delete Buttons */}
-        
-          <button
-            onClick={() => handleEdit(p)}
-             style ={{
-               fontSize: "20px",
-              color: "navy",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px",
-             }}
-          
-            
-            onMouseOver={(e) => e.target.style.opacity = "0.8"}
-            onMouseOut={(e) => e.target.style.opacity = "1"}
-            
-          >
-            
-             <i className="fas fa-pencil-alt"></i>
-          </button>
-          <button
-            onClick={() => handleDelete(p._id)}
-             style ={{
-               fontSize: "20px",
-              color: "navy",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px",
-             }}
-           
-            onMouseOver={(e) => e.target.style.opacity = "0.8"}
-            onMouseOut={(e) => e.target.style.opacity = "1"}
-          >
-            <i className="fas fa-trash-alt"></i>
-          </button>
-      </Card>
-    ))}
-  </div>
-               
-   </div>
-                  
+                      <div style={{ marginBottom: "1rem" }}>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "0.8rem",
+                            background:
+                              p.status === "approved"
+                                ? "#C6F6D5"
+                                : p.status === "pending"
+                                  ? "#FEEBC8"
+                                  : "#FED7D7",
+                            color:
+                              p.status === "approved"
+                                ? "#22543D"
+                                : p.status === "pending"
+                                  ? "#744210"
+                                  : "#822727",
+                          }}
+                        >
+                          {p.status.toUpperCase()}
+                        </span>
+                      </div>
 
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <Button
+                          variant="outline"
+                          size="small"
+                          onClick={() =>
+                            handleProjectUpdate(p._id, "in-progress")
+                          }
+                        >
+                          Mark In Progress
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="small"
+                          onClick={() =>
+                            handleProjectUpdate(p._id, "completed")
+                          }
+                        >
+                          Mark Completed
+                        </Button>
+                      </div>
 
+                      {/* NEW: Edit and Delete Buttons */}
 
-
-
-
-
+                      <button
+                        onClick={() => handleEdit(p)}
+                        style={{
+                          fontSize: "20px",
+                          color: "navy",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: "6px",
+                        }}
+                        onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                        onMouseOut={(e) => (e.target.style.opacity = "1")}
+                      >
+                        <i className="fas fa-pencil-alt"></i>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p._id)}
+                        style={{
+                          fontSize: "20px",
+                          color: "navy",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: "6px",
+                        }}
+                        onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                        onMouseOut={(e) => (e.target.style.opacity = "1")}
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === "schemes" && (
-            <div style={{ display: "grid", gap: "2rem" }}>
+            <div style={{ display: "grid", gap: "2rem", maxWidth: "750px" }}>
               <Card title="Submit New Scheme">
                 <form
                   onSubmit={handleSchemeSubmit}
@@ -1987,7 +2164,7 @@ const PADashboard = () => {
                       gap: "15px",
                     }}
                   >
-                    <div style={styles.inputGroup}>
+                    {/* <div style={styles.inputGroup}>
                       <label style={styles.label}>Date</label>
                       <input
                         type="date"
@@ -1998,8 +2175,8 @@ const PADashboard = () => {
                         }
                         required
                       />
-                    </div>
-                    <div style={styles.inputGroup}>
+                    </div> */}
+                    {/* <div style={styles.inputGroup}>
                       <label style={styles.label}>Time</label>
                       <input
                         type="time"
@@ -2010,9 +2187,9 @@ const PADashboard = () => {
                         }
                         required
                       />
-                    </div>
+                    </div> */}
                   </div>
-                  <div style={styles.inputGroup}>
+                  {/* <div style={styles.inputGroup}>
                     <label style={styles.label}>Location</label>
                     <input
                       style={styles.input}
@@ -2025,7 +2202,7 @@ const PADashboard = () => {
                       }
                       required
                     />
-                  </div>
+                  </div> */}
                   <div style={styles.inputGroup}>
                     <label style={styles.label}>Category</label>
                     <input
@@ -2112,6 +2289,42 @@ const PADashboard = () => {
                         >
                           {s.status.toUpperCase()}
                         </span>
+                        <div>
+                          <button
+                            onClick={() => handleEdit(p)}
+                            style={{
+                              fontSize: "20px",
+                              color: "navy",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "6px",
+                            }}
+                            onMouseOver={(e) =>
+                              (e.target.style.opacity = "0.8")
+                            }
+                            onMouseOut={(e) => (e.target.style.opacity = "1")}
+                          >
+                            <i className="fas fa-pencil-alt"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p._id)}
+                            style={{
+                              fontSize: "20px",
+                              color: "navy",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "6px",
+                            }}
+                            onMouseOver={(e) =>
+                              (e.target.style.opacity = "0.8")
+                            }
+                            onMouseOut={(e) => (e.target.style.opacity = "1")}
+                          >
+                            <i className="fas fa-trash-alt"></i>
+                          </button>
+                        </div>
                       </div>
                     </Card>
                   ))}
@@ -2254,6 +2467,38 @@ const PADashboard = () => {
                         >
                           {ev.status.toUpperCase()}
                         </span>
+                      </div>
+                      <div>
+                        <button
+                          onClick={() => handleEdit(p)}
+                          style={{
+                            fontSize: "20px",
+                            color: "navy",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "6px",
+                          }}
+                          onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                          onMouseOut={(e) => (e.target.style.opacity = "1")}
+                        >
+                          <i className="fas fa-pencil-alt"></i>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p._id)}
+                          style={{
+                            fontSize: "20px",
+                            color: "navy",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "6px",
+                          }}
+                          onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                          onMouseOut={(e) => (e.target.style.opacity = "1")}
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
                       </div>
                     </Card>
                   ))}

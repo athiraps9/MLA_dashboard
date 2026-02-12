@@ -66,8 +66,8 @@ const SimpleCalendar = ({ schedules = [], busyDates = [], onDateClick, highlight
             borderRadius: '20px',
             padding: '1.5rem',
             border: '1px solid rgba(255, 255, 255, 0.4)',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-            maxWidth: '70%',
+            boxShadow: '10px 10px 25px 10px rgba(0,0,0,0.05)',
+            maxWidth: '100%',
             margin: '0 auto',
             fontFamily: "'Inter', sans-serif"
         },
