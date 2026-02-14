@@ -14,34 +14,13 @@ const ProjectSchema = new mongoose.Schema({
 
   category: {
     type: String,
-    required: [true, 'Category is required'],
-    enum: {
-      values: ['SDF', 'ADF', 'ROAD'],
-      message: '{VALUE} is not a valid category'
-    }
+   
   },
 
   constituency: {
     type: String,
-    required: [true, 'Constituency is required'],
-    enum: {
-      values: [
-        'Perinthal Manna',
-        'Melatoor',
-        'Manjeri',
-        'Malappuram',
-        'Vengara',
-        'Vallikkunnu',
-        'Tirurangadi',
-        'Tanur',
-        'Tirur',
-        'Kottakkal',
-        'Thavanur',
-        'Ponnani',
-        'Thrithala'
-      ],
-      message: '{VALUE} is not a valid constituency'
-    }
+    
+   
   },
 
   fundsAllocated: { type: String, required: true },

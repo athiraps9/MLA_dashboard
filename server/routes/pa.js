@@ -123,8 +123,9 @@ router.get('/projects', auth(), ensurePA, async (req, res) => {
 // POST /pa/project - Create a new project
 router.post('/project', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
-        const { title, description, fundsAllocated, startDate, endDate } = req.body;
+        const { projectNumber,title, description, fundsAllocated, startDate, endDate } = req.body;
         const project = new Project({
+            projectNumber,
             title,
             description,
             fundsAllocated,
@@ -445,10 +446,10 @@ router.post('/schedule', auth(), ensurePA, async (req, res) => {
         const { date, time, venue, scheduleType, description, adminId } = req.body;
 
         // Validate admin exists
-        const admin = await User.findById(adminId);
-        if (!admin || admin.role !== 'admin') {
-            return res.status(404).json({ message: 'Admin not found' });
-        }
+        // const admin = await User.findById(adminId);
+        // if (!admin || admin.role !== 'admin') {
+        //     return res.status(404).json({ message: 'Admin not found' });
+        // }
 
         // Create schedule
         const schedule = new Schedule({
@@ -458,17 +459,16 @@ router.post('/schedule', auth(), ensurePA, async (req, res) => {
             scheduleType,
             description,
             admin: adminId,
-            createdBy: req.user.id,
-            status: 'Pending'
+             status: 'Pending'
         });
-
+        console.log(schedule,"line 464");
         await schedule.save();
 
-        const populatedSchedule = await Schedule.findById(schedule._id)
-            .populate('admin', 'fullName')
-            .populate('createdBy', 'fullName');
-
+        const populatedSchedule = " ";
+        
+        console.log(populatedSchedule);
         res.json(populatedSchedule);
+        
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: err.message || 'Server error' });
@@ -478,17 +478,43 @@ router.post('/schedule', auth(), ensurePA, async (req, res) => {
 // GET /pa/schedules - Get all schedules created by PA
 router.get('/schedules', auth(), ensurePA, async (req, res) => {
     try {
-        const schedules = await Schedule.find({ createdBy: req.user.id })
-            .populate('admin', 'fullName')
-            .populate('approvedBy', 'fullName')
-            .sort({ date: -1 });
-
+        const schedules = await Schedule.find({ }).sort({ date: -1 });
         res.json(schedules);
+        
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+//Delete shedules
+
+router.delete("/schedules/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedSchedule = await Schedule.findByIdAndDelete(id);
+
+    if (!deletedSchedule) {
+      return res.status(404).json({ message: "Schedule not found" });
+    }
+
+    res.status(200).json({
+      message: "Schedule deleted successfully",
+      deletedSchedule,
+    });
+
+  } catch (err) {
+    console.error("Error deleting schedule:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
+
+
 
 // GET /pa/availability/:adminId/:date - Check admin availability for a date
 router.get('/availability/:adminId/:date', auth(), ensurePA, async (req, res) => {
@@ -581,5 +607,59 @@ router.get("/category", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Update Attendance
+router.put("/attendance/pending/:id", async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const updatedAttendance = await Attendance.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedAttendance) {
+      return res.status(404).json({ message: "Attendance not found" });
+    }
+
+    res.json(updatedAttendance);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// Delete Attendance
+router.delete("/attendance/pending/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedAttendance = await Attendance.findByIdAndDelete(id);
+
+    if (!deletedAttendance) {
+      return res.status(404).json({ message: "Attendance not found" });
+    }
+
+    res.json({ message: "Attendance deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = router;

@@ -8,6 +8,7 @@ import SimpleCalendar from "../components/SimpleCalendar";
 import ScheduleCard from "../components/ScheduleCard";
 import { SERVER_URL } from "../utils/api";
 import PaProfile from "./PaProfile";
+import onDelete from "../components/ScheduleCard";
 
 import {
   FaUserCircle,
@@ -27,6 +28,9 @@ const PADashboard = () => {
   const fileInputRef = useRef(null);
   const [success, setSuccess] = useState("");
   const [editingId, setEditingId] = useState(null);
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   //categories
 
@@ -335,17 +339,17 @@ const PADashboard = () => {
   const handleAttendanceSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Get MLA ID - for demo, fetch first MLA
-      // const mlaRes = await api.get('/mla-directory');
-      // const mlaId = attendanceForm.mlaId || mlaRes.data[0]?._id;
+      if (isEditMode) {
+        // UPDATE
+        await api.put(`/pa/attendance/${editId}`, attendanceForm);
+        alert("Attendance updated successfully");
+      } else {
+        await api.post("/pa/attendance", { ...attendanceForm });
+        alert("Attendance added successfully!");
+      }
+      fetchAttendance();
+      fetchAllAttendance();
 
-      // if (!mlaId) {
-      //     alert('No MLA found. Please ensure an MLA exists in the system.');
-      //     return;
-      // }
-
-      await api.post("/pa/attendance", { ...attendanceForm });
-      alert("Attendance added successfully!");
       setAttendanceForm({
         seasonId: "",
         date: "",
@@ -353,8 +357,9 @@ const PADashboard = () => {
         remarks: "",
         mlaId: "",
       });
-      fetchAttendance();
-      fetchAllAttendance();
+
+      setIsEditMode(false);
+      setEditId(null);
     } catch (err) {
       alert(
         "Error adding attendance: " +
@@ -369,20 +374,25 @@ const PADashboard = () => {
     try {
       await api.post("/pa/schedule", scheduleForm);
       alert("Schedule created successfully!");
+      console.log(scheduleForm,"shedule refresh or not ");
       setScheduleForm({
         date: "",
         time: "",
         venue: "",
         scheduleType: "",
         description: "",
-        adminId: "",
+        adminId:admins._id,
       });
+      
       fetchSchedules();
     } catch (err) {
+
+      console.log(err,"error in shedules");
       alert(
         "Error creating schedule: " +
           (err.response?.data?.message || err.message),
       );
+      
     }
   };
 
@@ -418,7 +428,7 @@ const PADashboard = () => {
       } else {
         // Create new project
 
-        await api.post("pa/projects", formData, {
+        await api.post("pa/project", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         setSuccess("Project created successfully!");
@@ -672,6 +682,44 @@ const PADashboard = () => {
     }
   };
 
+  const handleDeleteForPendingVerification = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this attendance?",
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/pa/attendance/pending/${id}`);
+      fetchAttendance();
+      console.log("deleted successfully");
+      alert("Attendance deleted successfully");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+const handleDeleteShedule = async (id) =>{
+
+  const confirmDelete = window.confirm("Are you sure?");
+
+  if (!confirmDelete) return;
+
+  try {
+    await api.delete(`/pa/schedules/${id}`);
+    fetchSchedules();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+
+
+
+
+
+
+
   if (loading) return <div>Loading...</div>;
 
   const styles = {
@@ -728,34 +776,30 @@ const PADashboard = () => {
     },
   };
 
-
-
   const modalStyles = {
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modal: {
-    
-    padding: "20px",
-    borderRadius: "8px",
-    width: "300px",
-    background: "#d5f4e6",
-    border:"30px",
-    
-  },
-  input: {
-    width: "100%",
-    padding: "8px",
-    marginTop: "10px",
-  },
-};
+    overlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modal: {
+      padding: "20px",
+      borderRadius: "8px",
+      width: "300px",
+      background: "#d5f4e6",
+      border: "30px",
+    },
+    input: {
+      width: "100%",
+      padding: "8px",
+      marginTop: "10px",
+    },
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -1458,22 +1502,9 @@ const PADashboard = () => {
                       )}
                       <div style={{ display: "flex" }}>
                         <button
-                          onClick={() => handleEditForPendingVerification()}
-                          style={{
-                            fontSize: "20px",
-                            color: "navy",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "6px",
-                          }}
-                          onMouseOver={(e) => (e.target.style.opacity = "0.8")}
-                          onMouseOut={(e) => (e.target.style.opacity = "1")}
-                        >
-                          <i className="fas fa-pencil-alt"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteForPendingVerification()}
+                          onClick={() =>
+                            handleDeleteForPendingVerification(p._id)
+                          }
                           style={{
                             fontSize: "20px",
                             color: "navy",
@@ -1497,224 +1528,228 @@ const PADashboard = () => {
           )}
           {activeTab === "scheduling" && (
             <div style={{}}>
-              
-
               {/* Create Schedule Form */}
-              <div >
+              <div>
                 <h2 style={{ marginBottom: "15px" }}>Schedule Management</h2>
-                
-              <Card title="Create New Schedule "  >
-            <div
-            style={{
-              display: "flex",
-              gap: "2px",
-              alignItems: "flex-start",
-            }}>
 
-              <div style={{ flex: 1  ,maxWidth:"460px"}}>
-
-                <form
-                  onSubmit={handleScheduleSubmit}
-                  style={{ display: "grid", gap: "15px", maxWidth: "400px" }}
-                >
-                  {admins.length > 0 && (
-                    <div
-                      style={{
-                        padding: "10px",
-                        background: "#f0f4f8",
-                        borderRadius: "8px",
-                        border: "1px solid #d1d9e6",
-                        color: "#2d3748",
-                        fontSize: "0.9rem",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Schedule with: <strong>{admins[0].fullName}</strong>
-                    </div>
-                  )}
+                <Card title="Create New Schedule ">
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "15px",
+                      display: "flex",
+                      gap: "2px",
+                      alignItems: "flex-start",
                     }}
                   >
-                    <div>
-                      <label
+                    <div style={{ flex: 1, maxWidth: "460px" }}>
+                      <form
+                        onSubmit={handleScheduleSubmit}
                         style={{
-                          display: "block",
-                          marginBottom: "5px",
-                          fontWeight: "bold",
+                          display: "grid",
+                          gap: "15px",
+                          maxWidth: "400px",
                         }}
                       >
-                        Date
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={scheduleForm.date}
-                        onChange={(e) => {
-                          setScheduleForm({
-                            ...scheduleForm,
-                            date: e.target.value,
-                          });
-                          if (scheduleForm.adminId && e.target.value) {
+                        {admins.length > 0 && (
+                          <div
+                            style={{
+                              padding: "10px",
+                              background: "#f0f4f8",
+                              borderRadius: "8px",
+                              border: "1px solid #d1d9e6",
+                              color: "#2d3748",
+                              fontSize: "0.9rem",
+                              fontWeight: "500",
+                            }}
+                          >
+                            Schedule with: <strong>{admins[0].fullName}</strong>
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "15px",
+                          }}
+                        >
+                          <div>
+                            <label
+                              style={{
+                                display: "block",
+                                marginBottom: "5px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              Date
+                            </label>
+                            <input
+                              type="date"
+                              className="form-control"
+                              value={scheduleForm.date}
+                              onChange={(e) => {
+                                setScheduleForm({
+                                  ...scheduleForm,
+                                  date: e.target.value,
+                                });
+                                if (scheduleForm.adminId && e.target.value) {
+                                  checkAvailability(
+                                    scheduleForm.adminId,
+                                    e.target.value,
+                                  );
+                                }
+                              }}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label
+                              style={{
+                                display: "block",
+                                marginBottom: "5px",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              Time
+                            </label>
+                            <input
+                              type="time"
+                              className="form-control"
+                              value={scheduleForm.time}
+                              onChange={(e) =>
+                                setScheduleForm({
+                                  ...scheduleForm,
+                                  time: e.target.value,
+                                })
+                              }
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Availability Indicator */}
+                        {availability && (
+                          <div
+                            style={{
+                              padding: "10px",
+                              borderRadius: "6px",
+                              backgroundColor: availability.isAvailable
+                                ? "#d4edda"
+                                : "#f8d7da",
+                              color: availability.isAvailable
+                                ? "#155724"
+                                : "#721c24",
+                              fontSize: "0.9rem",
+                            }}
+                          >
+                            {availability.isAvailable
+                              ? "✓ Admin is available on this date"
+                              : "✗ Admin has existing schedules on this date"}
+                          </div>
+                        )}
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "5px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            Venue
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={scheduleForm.venue}
+                            onChange={(e) =>
+                              setScheduleForm({
+                                ...scheduleForm,
+                                venue: e.target.value,
+                              })
+                            }
+                            required
+                            placeholder="e.g., Assembly Hall"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "5px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            Schedule Type
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={scheduleForm.scheduleType}
+                            onChange={(e) =>
+                              setScheduleForm({
+                                ...scheduleForm,
+                                scheduleType: e.target.value,
+                              })
+                            }
+                            required
+                            placeholder="e.g., Meeting, Event, Session"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "5px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            Description
+                          </label>
+                          <textarea
+                            className="form-control"
+                            value={scheduleForm.description}
+                            onChange={(e) =>
+                              setScheduleForm({
+                                ...scheduleForm,
+                                description: e.target.value,
+                              })
+                            }
+                            rows="3"
+                            placeholder="Optional description"
+                          />
+                        </div>
+                        <Button type="submit">Create Schedule</Button>
+                      </form>
+                    </div>
+
+                    <div className="second" style={{ flex: 1 }}>
+                      {/* Calendar View */}
+                      {/* <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
+                Calendar View
+              </h3> */}
+                      <SimpleCalendar
+                        schedules={schedules}
+                        busyDates={busyDates}
+                        onDateClick={(date) => {
+                          setSelectedDate(date);
+                          const formattedDate = date
+                            .toISOString()
+                            .split("T")[0];
+                          setScheduleForm((prev) => ({
+                            ...prev,
+                            date: formattedDate,
+                          }));
+                          if (scheduleForm.adminId) {
                             checkAvailability(
                               scheduleForm.adminId,
-                              e.target.value,
+                              formattedDate,
                             );
                           }
                         }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: "5px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Time
-                      </label>
-                      <input
-                        type="time"
-                        className="form-control"
-                        value={scheduleForm.time}
-                        onChange={(e) =>
-                          setScheduleForm({
-                            ...scheduleForm,
-                            time: e.target.value,
-                          })
-                        }
-                        required
                       />
                     </div>
                   </div>
-
-                  {/* Availability Indicator */}
-                  {availability && (
-                    <div
-                      style={{
-                        padding: "10px",
-                        borderRadius: "6px",
-                        backgroundColor: availability.isAvailable
-                          ? "#d4edda"
-                          : "#f8d7da",
-                        color: availability.isAvailable ? "#155724" : "#721c24",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {availability.isAvailable
-                        ? "✓ Admin is available on this date"
-                        : "✗ Admin has existing schedules on this date"}
-                    </div>
-                  )}
-
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "5px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Venue
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={scheduleForm.venue}
-                      onChange={(e) =>
-                        setScheduleForm({
-                          ...scheduleForm,
-                          venue: e.target.value,
-                        })
-                      }
-                      required
-                      placeholder="e.g., Assembly Hall"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "5px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Schedule Type
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={scheduleForm.scheduleType}
-                      onChange={(e) =>
-                        setScheduleForm({
-                          ...scheduleForm,
-                          scheduleType: e.target.value,
-                        })
-                      }
-                      required
-                      placeholder="e.g., Meeting, Event, Session"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: "5px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Description
-                    </label>
-                    <textarea
-                      className="form-control"
-                      value={scheduleForm.description}
-                      onChange={(e) =>
-                        setScheduleForm({
-                          ...scheduleForm,
-                          description: e.target.value,
-                        })
-                      }
-                      rows="3"
-                      placeholder="Optional description"
-                    />
-                  </div>
-                  <Button type="submit">Create Schedule</Button>
-                </form>
-                </div>
-                
-                
-                 <div className="second" style={{flex: 1}}>
-            
-              {/* Calendar View */}
-              {/* <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
-                Calendar View
-              </h3> */}
-              <SimpleCalendar
-                schedules={schedules}
-                busyDates={busyDates}
-                onDateClick={(date) => {
-                  setSelectedDate(date);
-                  const formattedDate = date.toISOString().split("T")[0];
-                  setScheduleForm((prev) => ({ ...prev, date: formattedDate }));
-                  if (scheduleForm.adminId) {
-                    checkAvailability(scheduleForm.adminId, formattedDate);
-                  }
-                }}
-              />
-
-                 
-                </div>
-                </div>
-              </Card>
-             
+                </Card>
               </div>
-
-            
 
               {/* My Schedules */}
               <h3 style={{ marginTop: "40px", marginBottom: "20px" }}>
@@ -1740,7 +1775,10 @@ const PADashboard = () => {
                   }}
                 >
                   {schedules.map((schedule) => (
-                    <ScheduleCard key={schedule._id} schedule={schedule} />
+                    <ScheduleCard key={schedule._id} 
+                    schedule={schedule}
+                    //onEdit={handleEditShedule}
+                    onDelete={handleDeleteShedule}/>
                   ))}
                 </div>
               )}
@@ -1831,9 +1869,15 @@ const PADashboard = () => {
                                 </option>
                               ))}
                             </select>
-                            <button style={{width:"40px",height:"40px" ,marginRight:"10px",background:"#10B981"}}
+                            <button
+                              style={{
+                                width: "40px",
+                                height: "40px",
+                                marginRight: "10px",
+                                background: "#10B981",
+                              }}
                               type="button"
-                              onClick={() => setShowCategoryModal(true) }
+                              onClick={() => setShowCategoryModal(true)}
                             >
                               Add
                             </button>
