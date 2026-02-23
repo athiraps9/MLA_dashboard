@@ -608,7 +608,7 @@ const handleDeleteScheme = async (id) => {
       });
 
       await api.post("/pa/event", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        // headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Event submitted for verification!");
       setEventForm({
@@ -2531,7 +2531,7 @@ const handleDeleteEvent = async (id) => {
                     <Card key={ev._id} title={ev.category}>
                       {ev.imageUrl && (
                         <img
-                          src={`${SERVER_URL}${ev.imageUrl}`}
+                          src={ev.imageUrl}
                           alt={ev.category}
                           style={{
                             width: "100%",

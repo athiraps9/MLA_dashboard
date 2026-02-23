@@ -19,10 +19,10 @@ router.get('/public/dashboard', async (req, res) => {
     console.log('Fetching public dashboard data...');
     //const projects = await Project.find({ status: 'approved' }).populate('mla', 'fullName district');
     const projects = await Project.find({ status: ['approved','pending',  'in-progress', 'completed'] });
-    const schemes = await Scheme.find({ status: 'approved' }).populate('pa', 'fullName');
-    const events = await Event.find({ status: 'approved' }).populate('pa', 'fullName');
+    const schemes = await Scheme.find({ status: 'approved' }).populate();
+    const events = await Event.find({ status: ['approved','pending']}).populate();
 
-    const attendance = await Attendance.find({ isVerified: true }).populate('mla', 'fullName district');
+    const attendance = await Attendance.find({ isVerified: true }).populate();
     res.json({ projects, schemes, events, attendance });
 
 

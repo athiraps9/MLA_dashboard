@@ -522,7 +522,7 @@ router.delete("/scheme/:id", async (req, res) => {
 // GET /pa/events
 router.get('/events', auth(), ensurePA, async (req, res) => {
     try {
-        const events = await Event.find({ pa: req.user.id }).sort({ createdAt: -1 });
+        const events = await Event.find({  }).sort({ createdAt: -1 });
         res.json(events);
         console.log("line number 258",events);
     } catch (err) {
@@ -533,11 +533,24 @@ router.get('/events', auth(), ensurePA, async (req, res) => {
 
 // POST /pa/event
 // POST /pa/event
+// CREATE EVENT
 router.post('/event', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
         const { date, time, location, category, description } = req.body;
         
-        // Create event first without image
+        console.log("=== EVENT SUBMISSION ===");
+        console.log("Body:", req.body);
+        console.log("File:", req.file);
+        console.log("======================");
+        
+        // Validate required fields
+        if (!date || !time || !location || !category || !description) {
+            return res.status(400).json({ 
+                message: 'All fields are required'
+            });
+        }
+        
+        // Create event
         const event = new Event({
             date,
             time,
@@ -547,35 +560,52 @@ router.post('/event', auth(), ensurePA, upload.single('image'), async (req, res)
             pa: req.user.id,
             status: 'pending'
         });
-        
+
         await event.save();
-        
-        // Handle image upload if present
+        console.log("Event saved with ID:", event._id);
+
+        // Upload image to Cloudinary if provided
         if (req.file) {
-            
-            
-            // Get file extension from original file
-            const fileExtension = path.extname(req.file.originalname);
-            
-            // Create new filename using event ID
-            const newFilename = `${event._id}${fileExtension}`;
-            const oldPath = req.file.path;
-            const newPath = path.join(path.dirname(oldPath), newFilename);
-            
-            // Rename the file
-            fs.renameSync(oldPath, newPath);
-            
-            // Update event with image URL
-            event.imageUrl = `/uploads/${newFilename}`;
-            await event.save();
+            try {
+                console.log("Uploading image to Cloudinary...");
+                const result = await uploadToCloudinary(
+                    req.file.buffer,
+                    event._id.toString(),
+                    req.file.mimetype,
+                    'events'  // Cloudinary folder
+                );
+                
+                event.imageUrl = result.secure_url;
+                event.imagePublicId = result.public_id;
+                await event.save();
+                
+                console.log("Image uploaded:", result.secure_url);
+            } catch (uploadError) {
+                console.error('Image upload error:', uploadError);
+                return res.status(201).json({
+                    success: true,
+                    event,
+                    warning: 'Event created but image upload failed'
+                });
+            }
         }
         
-        res.json(event);
+        res.status(201).json({
+            success: true,
+            event
+        });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Event creation error:", err);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: err.message 
+        });
     }
 });
+
+
+
 // PUT /pa/event/:id
 router.put('/event/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
