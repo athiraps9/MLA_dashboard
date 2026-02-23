@@ -1,40 +1,41 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = 'uploads';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
+// Use memory storage (files stored in memory as Buffer, not on disk)
+const storage = multer.memoryStorage();
 
-// Storage Configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-// File Filter (Images Only)
+// File filter function
 const fileFilter = (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|webp/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
+    console.log("=== MULTER FILE FILTER ===");
+    console.log("File received:", file.originalname);
+    console.log("MIME type:", file.mimetype);
+    console.log("========================");
 
-    if (mimetype && extname) {
-        return cb(null, true);
+    // Allowed image MIME types
+    const allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/svg+xml'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+        // Accept file
+        cb(null, true);
     } else {
-        cb(new Error('Error: Images Only (jpeg, jpg, png, webp)!'));
+        // Reject file
+        cb(new Error('Invalid file type. Only image files are allowed.'), false);
     }
 };
 
+// Configure multer
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB max file size
+    },
     fileFilter: fileFilter
 });
 

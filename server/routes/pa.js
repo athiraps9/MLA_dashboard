@@ -13,6 +13,8 @@ const Category=require('../models/Category');
 const User = require('../models/User');
 const fs = require('fs');
 const path = require('path');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryHelper');
+
 
 // Middleware to ensure user is a PA or Admin
 const ensurePA = (req, res, next) => {
@@ -120,24 +122,111 @@ router.get('/projects', auth(), ensurePA, async (req, res) => {
     }
 });
 
-// POST /pa/project - Create a new project
+// CREATE PROJECT
 router.post('/project', auth(), ensurePA, upload.single('image'), async (req, res) => {
     try {
-        const { projectNumber,title, description, fundsAllocated, startDate, endDate } = req.body;
+        const { 
+            projectNumber, 
+            title, 
+            description, 
+            category, 
+            constituency, 
+            fundsAllocated, 
+            startDate, 
+            endDate 
+        } = req.body;
+        
+        console.log("=== REQUEST DEBUG ===");
+        console.log("Body:", req.body);
+        console.log("File:", req.file);
+        console.log("Content-Type:", req.headers['content-type']);
+        console.log("==================");
+        
+        // Validate required fields
+        if (!projectNumber || !title || !description || !fundsAllocated || !startDate || !endDate) {
+            return res.status(400).json({ message: 'Required fields are missing' });
+        }
+        
+        // Create project
         const project = new Project({
             projectNumber,
             title,
             description,
+            category,
+            constituency,
             fundsAllocated,
             startDate,
             endDate,
             status: 'pending'
         });
+
         await project.save();
-        res.json(project);
+        console.log("Project saved with ID:", project._id);
+
+        // Upload image to Cloudinary if file exists
+        if (req.file) {
+            try {
+                console.log("=== FILE DETAILS ===");
+                console.log("Original name:", req.file.originalname);
+                console.log("Mimetype:", req.file.mimetype);
+                console.log("Size:", req.file.size);
+                console.log("Buffer exists:", !!req.file.buffer);
+                console.log("Buffer is Buffer:", Buffer.isBuffer(req.file.buffer));
+                console.log("Buffer length:", req.file.buffer?.length);
+                console.log("==================");
+
+                if (!req.file.buffer || req.file.buffer.length === 0) {
+                    throw new Error("File buffer is empty");
+                }
+                
+                const result = await uploadToCloudinary(
+                    req.file.buffer,
+                    project._id.toString()
+                );
+                
+                console.log("=== CLOUDINARY RESULT ===");
+                console.log("URL:", result.secure_url);
+                console.log("Public ID:", result.public_id);
+                console.log("========================");
+                
+                project.imageUrl = result.secure_url;
+                project.imagePublicId = result.public_id;
+                await project.save();
+                
+                console.log("Project updated with image URL");
+            } catch (uploadError) {
+                console.error('Cloudinary upload error:', uploadError);
+                return res.status(201).json({
+                    success: true,
+                    project,
+                    warning: 'Project created but image upload failed',
+                    error: uploadError.message
+                });
+            }
+        } else {
+            console.log("No file in request");
+        }
+        
+        res.status(201).json({
+            success: true,
+            project
+        });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Project creation error:", err);
+        
+        if (err.code === 11000) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Project number already exists' 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error', 
+            error: err.message 
+        });
     }
 });
 
@@ -282,9 +371,9 @@ router.put('/complaint/:id', auth(), ensurePA, async (req, res) => {
 // SCHEME ROUTES
 
 // GET /pa/schemes
-router.get('/schemes', auth(), ensurePA, async (req, res) => {
+router.get('/schemes', auth(),async (req, res) => {
     try {
-        const schemes = await Scheme.find({ pa: req.user.id }).sort({ createdAt: -1 });
+        const schemes = await Scheme.find({ }).sort({ createdAt: -1 });
         res.json(schemes);
     } catch (err) {
         console.error(err);
@@ -293,25 +382,98 @@ router.get('/schemes', auth(), ensurePA, async (req, res) => {
 });
 
 // POST /pa/scheme
-router.post('/scheme', auth(), ensurePA, upload.single('image'), async (req, res) => {
+// router.post('/scheme', auth(), ensurePA, upload.single('image'), async (req, res) => {
+//     try {
+//         const { date, time, location, category, description } = req.body;
+//         const scheme = new Scheme({
+//             date,
+//             time,
+//             location,
+//             category,
+//             description,
+//             pa: req.user.id,
+//             status: 'pending'
+//         });
+//         await scheme.save();
+//         res.json(scheme);
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// });
+
+router.post('/scheme', upload.single('image'), async (req, res) => {
     try {
         const { date, time, location, category, description } = req.body;
+        
+        console.log("=== SCHEME SUBMISSION ===");
+        console.log("Body:", req.body);
+        console.log("File:", req.file);
+        console.log("======================");
+        
+        // TEMPORARY: Make fields optional for testing
         const scheme = new Scheme({
-            date,
-            time,
-            location,
-            category,
-            description,
-            pa: req.user.id,
+            date: date || new Date(),  // Default to now if missing
+            time: time || '00:00',     // Default time
+            location: location || 'Not specified',  // Default location
+            category: category || 'General',
+            description: description || 'No description',
             status: 'pending'
         });
+
         await scheme.save();
-        res.json(scheme);
+        console.log("Scheme saved with ID:", scheme._id);
+
+        // Upload image if provided
+        if (req.file) {
+            try {
+                console.log("Uploading to Cloudinary...");
+                const result = await uploadToCloudinary(
+                    req.file.buffer,
+                    scheme._id.toString(),
+                    req.file.mimetype,
+                    'schemes'
+                );
+                
+                scheme.imageUrl = result.secure_url;
+                scheme.imagePublicId = result.public_id;
+                await scheme.save();
+                
+                console.log("Image uploaded:", result.secure_url);
+            } catch (uploadError) {
+                console.error('Image upload error:', uploadError);
+                return res.status(201).json({
+                    success: true,
+                    scheme,
+                    warning: 'Scheme created but image upload failed',
+                    error: uploadError.message
+                });
+            }
+        }
+        
+        res.status(201).json({
+            success: true,
+            scheme,
+            message: 'Scheme created successfully'
+        });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Scheme creation error:", err);
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error', 
+            error: err.message 
+        });
     }
 });
+
+
+
+
+
+
+
+
 
 // PUT /pa/scheme/:id
 router.put('/scheme/:id', auth(), ensurePA, upload.single('image'), async (req, res) => {
@@ -332,6 +494,28 @@ router.put('/scheme/:id', auth(), ensurePA, upload.single('image'), async (req, 
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// Delete project
+router.delete("/scheme/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const scheme = await Scheme.findById(id);
+    if (!scheme) {
+      return res.status(404).json({ message: "Scheme not found" });
+    }
+
+    await Scheme.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Scheme deleted successfully" });
+  } catch (error) {
+    console.error("Delete scheme error:", error);
+
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 
 // EVENT ROUTES
 
@@ -411,6 +595,33 @@ router.put('/event/:id', auth(), ensurePA, upload.single('image'), async (req, r
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+router.delete("/event/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    await Event.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Event deleted successfully" });
+  } catch (error) {
+    console.error("Delete event error:", error);
+
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+
+
+
+
+
+
 
 // ==================== SCHEDULING ROUTES ====================
 

@@ -56,6 +56,12 @@ const ProjectSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now }
     }
   ],
+  imageUrl: {
+        type: String
+    },
+    imagePublicId: {
+        type: String
+    },
 
   averageRating: { type: Number, default: 0 },
   totalRatings: { type: Number, default: 0 },

@@ -374,25 +374,23 @@ const PADashboard = () => {
     try {
       await api.post("/pa/schedule", scheduleForm);
       alert("Schedule created successfully!");
-      console.log(scheduleForm,"shedule refresh or not ");
+      console.log(scheduleForm, "shedule refresh or not ");
       setScheduleForm({
         date: "",
         time: "",
         venue: "",
         scheduleType: "",
         description: "",
-        adminId:admins._id,
+        adminId: admins._id,
       });
-      
+
       fetchSchedules();
     } catch (err) {
-
-      console.log(err,"error in shedules");
+      console.log(err, "error in shedules");
       alert(
         "Error creating schedule: " +
           (err.response?.data?.message || err.message),
       );
-      
     }
   };
 
@@ -405,61 +403,80 @@ const PADashboard = () => {
     }
   };
 
-  const handleProjectSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+const handleProjectSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
 
-    try {
-      const formData = new FormData();
-      Object.keys(projectForm).forEach((key) => {
-        if (projectForm[key] !== null && projectForm[key] !== "") {
-          formData.append(key, projectForm[key]);
+  try {
+    const formData = new FormData();
+    
+    // Append all fields EXCEPT projectImage
+    Object.keys(projectForm).forEach((key) => {
+      if (key !== 'projectImage' && projectForm[key] !== null && projectForm[key] !== "") {
+        formData.append(key, projectForm[key]);
+      }
+    });
+
+    // Append image file separately with correct field name
+    if (projectForm.projectImage instanceof File) {
+      console.log("Adding file:", projectForm.projectImage.name);
+      formData.append('image', projectForm.projectImage);
+    } else {
+      console.log("No valid file selected");
+    }
+
+    // Debug: Check what's in FormData
+    console.log("=== FormData Contents ===");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, ":", value instanceof File ? value.name : value);
+    }
+
+    if (editingId) {
+      // Update
+      const response = await api.put(`/pa/project/${editingId}`, formData, {
+        headers: {
+          // Let axios set Content-Type automatically with boundary
         }
       });
-
-      if (editingId) {
-        // Update existing project
-        await api.put(`/pa/projects/${editingId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        setSuccess("Project updated successfully!");
-        setEditingId(null);
-      } else {
-        // Create new project
-
-        await api.post("pa/project", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        setSuccess("Project created successfully!");
-      }
-
-      // Reset form
-      setProjectForm({
-        projectNumber: "",
-        title: "",
-        description: "",
-        category: "",
-        constituency: "",
-        startDate: "",
-        endDate: "",
-        fundsAllocated: "",
-        projectImage: null,
+      setSuccess("Project updated successfully!");
+      setEditingId(null);
+    } else {
+      // Create
+      const response = await api.post("/pa/project", formData, {
+        headers: {
+          // Let axios set Content-Type automatically with boundary
+        }
       });
-
-      // Clear file input
-      const fileInput = document.querySelector('input[type="file"]');
-      if (fileInput) fileInput.value = "";
-
-      fetchProjects();
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          `Failed to ${editingId ? "update" : "create"} project`,
-      );
-      console.error("Project submit error:", err);
+      setSuccess("Project created successfully!");
     }
-  };
+
+    // Reset form
+    setProjectForm({
+      projectNumber: "",
+      title: "",
+      description: "",
+      category: "",
+      constituency: "",
+      startDate: "",
+      endDate: "",
+      fundsAllocated: "",
+      projectImage: null,
+    });
+
+    // Clear file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = "";
+
+    fetchProjects();
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
+        `Failed to ${editingId ? "update" : "create"} project`
+    );
+    console.error("Project submit error:", err);
+  }
+};
 
   const handleEdit = (project) => {
     setEditingId(project._id);
@@ -544,7 +561,7 @@ const PADashboard = () => {
       });
 
       await api.post("/pa/scheme", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        // headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Scheme submitted for verification!");
       setSchemeForm({
@@ -560,6 +577,25 @@ const PADashboard = () => {
       alert("Failed to submit scheme");
     }
   };
+
+  //Delete Schemes 
+
+const handleDeleteScheme = async (id) => {
+  if (!window.confirm("Are you sure?")) return;
+
+  setLoading(true);
+  try {
+    await api.delete(`/pa/scheme/${id}`);
+    await fetchSchemes();
+    setSuccess("Scheme deleted successfully!");
+  } catch (error) {
+    setError("Failed to delete scheme. Please try again.");
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleEventSubmit = async (e) => {
     e.preventDefault();
@@ -593,6 +629,23 @@ const PADashboard = () => {
       alert("Failed to submit event");
     }
   };
+
+const handleDeleteEvent = async (id) => {
+  if (!window.confirm("Are you sure to delete?")) return;
+
+  setLoading(true);
+  try {
+    await api.delete(`/pa/event/${id}`);
+    await fetchEvents();
+    setSuccess("Event deleted successfully");
+  } catch (error) {
+    setError("Failed to delete");
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleComplaintUpdate = async (id, status, response) => {
     try {
@@ -699,26 +752,18 @@ const PADashboard = () => {
     }
   };
 
-const handleDeleteShedule = async (id) =>{
+  const handleDeleteShedule = async (id) => {
+    const confirmDelete = window.confirm("Are you sure?");
 
-  const confirmDelete = window.confirm("Are you sure?");
+    if (!confirmDelete) return;
 
-  if (!confirmDelete) return;
-
-  try {
-    await api.delete(`/pa/schedules/${id}`);
-    fetchSchedules();
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-
-
-
-
-
-
+    try {
+      await api.delete(`/pa/schedules/${id}`);
+      fetchSchedules();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
 
@@ -1775,10 +1820,12 @@ const handleDeleteShedule = async (id) =>{
                   }}
                 >
                   {schedules.map((schedule) => (
-                    <ScheduleCard key={schedule._id} 
-                    schedule={schedule}
-                    //onEdit={handleEditShedule}
-                    onDelete={handleDeleteShedule}/>
+                    <ScheduleCard
+                      key={schedule._id}
+                      schedule={schedule}
+                      //onEdit={handleEditShedule}
+                      onDelete={handleDeleteShedule}
+                    />
                   ))}
                 </div>
               )}
@@ -1821,6 +1868,7 @@ const handleDeleteShedule = async (id) =>{
 
                     <form
                       onSubmit={handleProjectSubmit}
+                       encType="multipart/form-data"
                       style={{ display: "grid", gap: "15px" }}
                     >
                       {/* Project Number & Category */}
@@ -2041,7 +2089,16 @@ const handleDeleteShedule = async (id) =>{
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleFileChange}
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setProjectForm({
+                                ...projectForm,
+                                projectImage: file, // Store the actual File object
+                              });
+                              console.log("File selected:", file.name);
+                            }
+                          }}
                         />
                       </div>
 
@@ -2085,21 +2142,22 @@ const handleDeleteShedule = async (id) =>{
                 </>
               </div>
 
-              <div>
+              <div >
                 <h3>Project Status Management</h3>
-                <div style={{ display: "grid", gap: "1rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1.5rem"}}>
                   {projects.map((p) => (
                     <Card key={p._id} title={p.title}>
                       {p.imageUrl && (
                         <img
-                          src={`${SERVER_URL}${p.imageUrl}`}
+                          src={`${p.imageUrl}`}
                           alt={p.title}
                           style={{
                             width: "100%",
-                            height: "150px",
+                            height: "180px",
                             objectFit: "cover",
                             borderRadius: "8px",
                             marginBottom: "10px",
+                            display: "block",
                           }}
                         />
                       )}
@@ -2295,7 +2353,7 @@ const handleDeleteShedule = async (id) =>{
                     <Card key={s._id} title={s.category}>
                       {s.imageUrl && (
                         <img
-                          src={`${SERVER_URL}${s.imageUrl}`}
+                          src={s.imageUrl}
                           alt={s.category}
                           style={{
                             width: "100%",
@@ -2334,8 +2392,8 @@ const handleDeleteShedule = async (id) =>{
                           {s.status.toUpperCase()}
                         </span>
                         <div>
-                          <button
-                            onClick={() => handleEdit(p)}
+                          {/* <button
+                            onClick={() => handleEditScheme(s)}
                             style={{
                               fontSize: "20px",
                               color: "navy",
@@ -2350,9 +2408,9 @@ const handleDeleteShedule = async (id) =>{
                             onMouseOut={(e) => (e.target.style.opacity = "1")}
                           >
                             <i className="fas fa-pencil-alt"></i>
-                          </button>
+                          </button> */}
                           <button
-                            onClick={() => handleDelete(p._id)}
+                            onClick={() => handleDeleteScheme(s._id)}
                             style={{
                               fontSize: "20px",
                               color: "navy",
@@ -2513,7 +2571,7 @@ const handleDeleteShedule = async (id) =>{
                         </span>
                       </div>
                       <div>
-                        <button
+                        {/* <button
                           onClick={() => handleEdit(p)}
                           style={{
                             fontSize: "20px",
@@ -2527,9 +2585,9 @@ const handleDeleteShedule = async (id) =>{
                           onMouseOut={(e) => (e.target.style.opacity = "1")}
                         >
                           <i className="fas fa-pencil-alt"></i>
-                        </button>
+                        </button> */}
                         <button
-                          onClick={() => handleDelete(p._id)}
+                          onClick={() => handleDeleteEvent(ev._id)}
                           style={{
                             fontSize: "20px",
                             color: "navy",
