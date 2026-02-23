@@ -323,7 +323,7 @@ router.get('/projects/pending', auth(['admin']), ensureAdmin, async (req, res) =
 // GET /admin/schemes/pending
 router.get('/schemes/pending', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
-        const schemes = await Scheme.find({ status: 'pending' }).populate('pa', 'fullName');
+        const schemes = await Scheme.find({ status: 'pending' }).populate();
         res.json(schemes);
     } catch (err) {
         console.error(err);
@@ -334,7 +334,7 @@ router.get('/schemes/pending', auth(['admin']), ensureAdmin, async (req, res) =>
 // GET /admin/events/pending
 router.get('/events/pending', auth(['admin']), ensureAdmin, async (req, res) => {
     try {
-        const events = await Event.find({ status: 'pending' }).populate('pa', 'fullName');
+        const events = await Event.find({ status: 'pending' }).populate();
         res.json(events);
     } catch (err) {
         console.error(err);

@@ -880,7 +880,7 @@ const [scheduleForm, setScheduleForm] = useState({
                       <h3>{p.title}</h3>
                       {p.imageUrl && (
                         <img
-                          src={`${SERVER_URL}${p.imageUrl}`}
+                          src={`${p.imageUrl}`}
                           alt={p.title}
                           style={{
                             width: "100%",
@@ -1004,7 +1004,7 @@ const [scheduleForm, setScheduleForm] = useState({
                       <h3>{s.category}</h3>
                       {s.imageUrl && (
                         <img
-                          src={`${SERVER_URL}${s.imageUrl}`}
+                          src={`${s.imageUrl}`}
                           alt={s.category}
                           style={{
                             width: "100%",

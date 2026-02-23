@@ -54,7 +54,7 @@ const ProjectCardSection = ({ data }) => {
         gap: "10px",
         transition: "all 0.2s",
         cursor: showViewButton ? "default" : "pointer",
-        height: "320px", // Fixed height
+        height: "520px", // Fixed height
         overflow: "hidden", // Hide overflow content
       }}
       onClick={() => !showViewButton && handleViewDetails(project)}
@@ -67,6 +67,16 @@ const ProjectCardSection = ({ data }) => {
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
+      <div >
+        <img src={`${project.imageUrl}` } style={{
+    width: "100%",
+    height: "180px",
+    objectFit: "cover",
+    borderRadius: "8px",
+    marginBottom: "10px",
+    display: "block",
+  }}/>
+      </div>
       {/* Title */}
       <h4
         style={{

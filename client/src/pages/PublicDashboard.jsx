@@ -31,6 +31,7 @@ import DetailedView from "../components/DetailedView";
 import ScheduleCardSection from "../components/ScheduleCardSection";
 import ComplaintForm from "../components/Complaintform";
 import ProjectCardSection from "../components/ProjectCardSection";
+import SchemeCardSection from "../components/SchemeCardSection";
 
 
 
@@ -50,6 +51,7 @@ const PublicDashboard = () => {
     attendance: [],
     events: [],
     schedules:[],
+    schemes:[],
      
   });
 
@@ -556,6 +558,16 @@ const handleBackToGrid = () => {
         <EventCardSection data={data} />
       </section>
         </div>
+
+          
+        <div>
+          <section>
+        <h2 style={{
+        fontSize: "1.5rem"}}>Schemes</h2>
+        <SchemeCardSection data={data} />
+      </section>
+        </div>
+        
 
         {/* View More Button */}
        

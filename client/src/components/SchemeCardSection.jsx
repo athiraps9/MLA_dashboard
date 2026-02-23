@@ -5,27 +5,27 @@ import ViewMoreModal from './ViewMoreModal';
 
 /**
  * EVENT CARD SECTION COMPONENT
- * Same pattern as ProjectCardSection but for Events
+ * Same pattern as ProjectCardSection but for Scheme
  */
-const EventCardSection = ({ data }) => {
+const SchemeCardSection = ({ data }) => {
   // State management
   const [viewMode, setViewMode] = useState('grid');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showViewMore, setShowViewMore] = useState(false);
 
-  // Process events
-  const events = data?.events || [];
-  const sortedEvents = [...events].sort(
+  // Process scheme
+  const scheme = data?.schemes || [];
+  const sortedScheme = [...scheme].sort(
     (a, b) => new Date(b.date) - new Date(a.date)
   );
 
-  // Show only first 2 events in main view
-  const displayedEvents = sortedEvents.slice(0, 2);
-  const hasMoreEvents = sortedEvents.length > 2;
+  // Show only first 2 schemes in main view
+  const displayedScheme = sortedScheme.slice(0, 4);
+  const hasMoreScheme = sortedScheme.length > 4;
 
   // Handlers
-  const handleViewDetails = (event) => {
-    setSelectedEvent(event);
+  const handleViewDetails = (scheme) => {
+    setSelectedEvent(scheme);
     setViewMode('detailed');
   };
 
@@ -40,7 +40,7 @@ const EventCardSection = ({ data }) => {
   };
 
   // Render Event Card
-  const renderEventCard = (event, showViewButton = true) => (
+  const renderEventCard = (scheme, showViewButton = true) => (
     <div
       style={{
         backgroundColor: '#FFFFFF',
@@ -54,7 +54,7 @@ const EventCardSection = ({ data }) => {
         cursor: showViewButton ? 'default' : 'pointer',
         height: '100%',
       }}
-      onClick={() => !showViewButton && handleViewDetails(event)}
+      onClick={() => !showViewButton && handleViewDetails(scheme)}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)';
         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -65,7 +65,7 @@ const EventCardSection = ({ data }) => {
       }}
     >
        <div >
-        <img src={`${event.imageUrl}` } style={{
+        <img src={`${scheme.imageUrl}` } style={{
     width: "100%",
     height: "180px",
     objectFit: "cover",
@@ -87,7 +87,7 @@ const EventCardSection = ({ data }) => {
         lineHeight: '1.4',
         height: '100px',
       }}>
-        {event.description}
+        {scheme.description}
       </h4>
 
       {/* Date & Time */}
@@ -101,7 +101,7 @@ const EventCardSection = ({ data }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Calendar size={16} color="#3B82F6" />
           <span style={{ fontSize: '14px', color: '#374151', fontWeight: 500 }}>
-            {new Date(event.date).toLocaleDateString('en-US', {
+            {new Date(scheme.date).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
@@ -112,7 +112,7 @@ const EventCardSection = ({ data }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Clock size={16} color="#8B5CF6" />
           <span style={{ fontSize: '14px', color: '#374151' }}>
-            {event.time}
+            {scheme.time}
           </span>
         </div>
 
@@ -126,7 +126,7 @@ const EventCardSection = ({ data }) => {
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
           }}>
-            {event.venue}
+            {scheme.venue}
           </span>
         </div>
       </div>
@@ -144,11 +144,11 @@ const EventCardSection = ({ data }) => {
           textTransform: 'capitalize'
         }}
       >
-        {event.scheduleType}
+        {scheme.scheduleType}
       </span>
 
       {/* Description */}
-      {event.description && (
+      {scheme.description && (
         <p style={{
           margin: 0,
           color: '#6B7280',
@@ -160,7 +160,7 @@ const EventCardSection = ({ data }) => {
           overflow: 'hidden',
           height: '69px',
         }}>
-          {event.description}
+          {scheme.description}
         </p>
       )}
 
@@ -169,7 +169,7 @@ const EventCardSection = ({ data }) => {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            handleViewDetails(event);
+            handleViewDetails(scheme);
           }}
           style={{
             marginTop: 'auto',
@@ -204,7 +204,7 @@ const EventCardSection = ({ data }) => {
   );
 
   // Render Detailed Event Content
-  const renderDetailedContent = (event) => (
+  const renderDetailedContent = (scheme) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
       <div>
@@ -214,7 +214,7 @@ const EventCardSection = ({ data }) => {
           fontWeight: 700,
           color: '#111827'
         }}>
-          {event.title}
+          {scheme.title}
         </h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <span
@@ -228,7 +228,7 @@ const EventCardSection = ({ data }) => {
               textTransform: 'capitalize'
             }}
           >
-            {event.scheduleType}
+            {scheme.scheduleType}
           </span>
         </div>
       </div>
@@ -276,7 +276,7 @@ const EventCardSection = ({ data }) => {
               gap: '8px'
             }}>
               <Calendar size={20} color="#7C3AED" />
-              {new Date(event.date).toLocaleDateString('en-US', {
+              {new Date(scheme.date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -305,7 +305,7 @@ const EventCardSection = ({ data }) => {
               gap: '8px'
             }}>
               <Clock size={20} color="#7C3AED" />
-              {event.time}
+              {scheme.time}
             </div>
           </div>
 
@@ -329,14 +329,14 @@ const EventCardSection = ({ data }) => {
               gap: '8px'
             }}>
               <MapPin size={20} color="#7C3AED" />
-              {event.venue}
+              {scheme.venue}
             </div>
           </div>
         </div>
       </div>
 
       {/* Description */}
-      {event.description && (
+      {scheme.description && (
         <div>
           <h3 style={{
             margin: '0 0 12px 0',
@@ -352,7 +352,7 @@ const EventCardSection = ({ data }) => {
             lineHeight: '1.7',
             color: '#374151'
           }}>
-            {event.description}
+            {scheme.description}
           </p>
         </div>
       )}
@@ -380,13 +380,13 @@ const EventCardSection = ({ data }) => {
           color: '#78350F'
         }}>
           <div>
-            <strong>Schedule Type:</strong> {event.scheduleType}
+            <strong>Schedule Type:</strong> {scheme.scheduleType}
           </div>
           <div>
-            <strong>Event ID:</strong> {event._id}
+            <strong>Event ID:</strong> {scheme._id}
           </div>
           <div>
-            <strong>Status:</strong> {new Date(event.date) > new Date() ? 'Upcoming' : 'Completed'}
+            <strong>Status:</strong> {new Date(scheme.date) > new Date() ? 'Upcoming' : 'Completed'}
           </div>
         </div>
       </div>
@@ -401,13 +401,13 @@ const EventCardSection = ({ data }) => {
         onBack={handleBackToGrid}
         breadcrumbs={[
           { label: 'Dashboard', path: '/' },
-          { label: 'Events', path: '/events' },
+          { label: 'Scheme', path: '/schemes' },
           { label: selectedEvent.title, path: '#' }
         ]}
         renderContent={renderDetailedContent}
         enableComments={true}
         enableRating={true}
-        type="event"
+        type="scheme"
       />
     );
   }
@@ -424,7 +424,7 @@ const EventCardSection = ({ data }) => {
             gap: '16px',
           }}
         >
-          {displayedEvents.length === 0 ? (
+          {displayedScheme.length === 0 ? (
             <div
               style={{
                 background: '#fff',
@@ -435,19 +435,19 @@ const EventCardSection = ({ data }) => {
                 color: '#6B7280'
               }}
             >
-              <p style={{ margin: 0, fontSize: '16px' }}>No events found</p>
+              <p style={{ margin: 0, fontSize: '16px' }}>No schemes found</p>
             </div>
           ) : (
-            displayedEvents.map((event) => (
-              <div key={event._id}>
-                {renderEventCard(event, true)}
+            displayedScheme.map((scheme) => (
+              <div key={scheme._id}>
+                {renderEventCard(scheme, true)}
               </div>
             ))
           )}
         </div>
 
         {/* View More Button */}
-        {hasMoreEvents && (
+        {hasMoreScheme && (
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
             <button
               onClick={handleViewMore}
@@ -478,7 +478,7 @@ const EventCardSection = ({ data }) => {
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              View More Events ({sortedEvents.length - 2} more)
+              View More Scheme ({sortedScheme.length - 2} more)
               <ChevronRight size={16} />
             </button>
           </div>
@@ -487,19 +487,19 @@ const EventCardSection = ({ data }) => {
 
       {/* View More Modal */}
       <ViewMoreModal
-        items={sortedEvents}
+        items={sortedScheme}
         isOpen={showViewMore}
         onClose={handleBackToGrid}
         breadcrumbs={[
           { label: 'Dashboard', path: '/' },
-          { label: 'All Events', path: '/events' }
+          { label: 'All Scheme', path: '/schemes' }
         ]}
-        title="All Events"
-        renderCard={(event) => renderEventCard(event, false)}
+        title="All Scheme"
+        renderCard={(scheme) => renderEventCard(scheme, false)}
         onCardClick={handleViewDetails}
       />
     </>
   );
 };
 
-export default EventCardSection;
+export default SchemeCardSection;
