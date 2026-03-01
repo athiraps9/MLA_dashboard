@@ -68,6 +68,8 @@ const ProjectCardSection = ({ data }) => {
       }}
     >
       <div >
+
+       
         <img src={`${project.imageUrl}` } style={{
     width: "100%",
     height: "180px",

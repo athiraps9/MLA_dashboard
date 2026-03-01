@@ -18,6 +18,7 @@ import ForgotPassword from './pages/ForgotPassword'; // Password Reset
 import ResetPassword from './pages/ResetPassword'; // Password Reset
 import PublicDashboard from './pages/PublicDashboard';
 import AllProjects from './pages/AllProjects';
+import AllSchemes from './pages/AllSchemes';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -83,6 +84,11 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
+              <Route path="/user/schemes" element={
+                <ProtectedRoute role="public">
+                  <AllSchemes/>
+                </ProtectedRoute>
+              } />
 
 
 

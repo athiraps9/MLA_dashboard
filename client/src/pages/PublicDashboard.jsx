@@ -381,7 +381,7 @@ const handleBackToGrid = () => {
 
 
 
-
+          <a href="/user/schemes">
           <KPICard
             title="Total Schemes"
             value={`0`}
@@ -389,6 +389,8 @@ const handleBackToGrid = () => {
             icon={FaBox}
             color="#28a745"
           />
+
+          </a>
           {/* <KPICard title="Total Schemes" value={`₹${(utilizedFunds / 100000).toFixed(1)}`} subtext={`${utilizationPercentage}% Utilization`} icon={FaRupeeSign} color="#28a745" /> */}
 
           <KPICard
