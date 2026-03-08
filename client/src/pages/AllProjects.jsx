@@ -152,9 +152,14 @@ const handleBackToGrid = () => {
         </span>
         <span>Created: {new Date(project.createdAt).toLocaleDateString()}</span>
       </div>
+            
+
+            
+        <a href="/user/details"> Show More</a>
+           
 
       {/* View Details Button */}
-      {showViewButton && (
+      {/* {showViewButton && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -188,7 +193,7 @@ const handleBackToGrid = () => {
           <Eye size={16} />
           View Details
         </button>
-      )}
+      )} */}
     </div>
   );
 

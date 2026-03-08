@@ -27,9 +27,9 @@ const Footer = ({}) => {
                         <h4 style={{ color: 'white' }}>Quick Links</h4>
                         <div className="footer-links">
                             <Link to="/">Home</Link>
-                            <Link to="/mla-directory">MLA Directory</Link>
                             <Link to="/login">Login</Link>
                             <Link to="/signup">Register</Link>
+                            <Link to="/faq">FAQ</Link>
                         </div>
                     </div>
 
@@ -41,9 +41,10 @@ const Footer = ({}) => {
                             Perinthalmanna, Kerala
                         </p>
                         <div style={{ display: 'flex', gap: '15px' }}>
-                            <a href="#" style={{ color: 'white' }}><FaFacebook size={20} /></a>
-                            <a href="#" style={{ color: 'white' }}><FaTwitter size={20} /></a>
-                            <a href="#" style={{ color: 'white' }}><FaInstagram size={20} /></a>
+                            <a href="https://www.facebook.com/najeeb.kanthapuram/" style={{ color: 'white' }}><FaFacebook size={20} /></a>
+                            <a href="https://www.facebook.com/najeeb.kanthapuram/" style={{ color: 'white' }}><FaTwitter size={20} /></a>
+                            <a href="https://www.instagram.com/?hl=en" style={{ color: 'white' }}><FaInstagram size={20} /></a>
+                           
                         </div>
                     </div>
 

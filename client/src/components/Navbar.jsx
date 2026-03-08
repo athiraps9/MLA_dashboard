@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
-import { FaGlobe, FaUserCircle, FaSignOutAlt } from "react-icons/fa";
+import { FaGlobe, FaUserCircle, FaSignOutAlt ,FaBell} from "react-icons/fa";
 import { SERVER_URL } from "../utils/api";
 
 const Navbar = ({ user, onLogout }) => {
@@ -59,9 +59,7 @@ const Navbar = ({ user, onLogout }) => {
             gap: "10px",
           }}
         >
-          <span role="img" aria-label="flag" style={{ fontSize: "2rem" }}>
-            🇮🇳
-          </span>
+          
           <div
             style={{
               display: "flex",
@@ -106,20 +104,40 @@ const Navbar = ({ user, onLogout }) => {
 
           {!user ? (
             <>
-              <Link
+             
+             
+              <Link to="/about" className="nav-link"
+                style={{ color: "#333", fontWeight: "500"  }}>
+              About Us
+              </Link>
+              <Link to="/gallery" className="nav-link"
+                style={{ color: "#333", fontWeight: "500"  }}>
+              Gallery
+              </Link>
+            <Link to="/notification" className="btn btn-primary btn-sm"
+                style={{ padding: "8px 20px", borderRadius: "20px" }}>
+              <FaBell/>
+              </Link>
+               <Link
                 to="/login"
-                className="nav-link"
-                style={{ color: "#333", fontWeight: "500" }}
+                className="btn btn-primary btn-sm"
+                style={{ padding: "8px 20px", borderRadius: "20px"}}
               >
                 {t("Login", "ലോഗിൻ")}
               </Link>
-              <Link
+
+               <Link
                 to="/signup"
                 className="btn btn-primary btn-sm"
                 style={{ padding: "8px 20px", borderRadius: "20px" }}
               >
                 {t("Sign Up", "സൈൻ അപ്പ്")}
               </Link>
+
+
+
+
+
             </>
           ) : (
             <div style={{ position: "relative" }}>
