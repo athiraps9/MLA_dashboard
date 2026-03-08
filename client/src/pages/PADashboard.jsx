@@ -2611,44 +2611,69 @@ const handleDeleteEvent = async (id) => {
 
           {activeTab === "complaints" && (
             <div>
-              <h3>Complaint Management</h3>
-              {complaints.map((c) => (
-                <div key={c._id} className="card p-3 mb-3">
-                  <h4>{c.title}</h4>
-                  {c.imageUrl && (
-                    <img
-                      src={`${SERVER_URL}${c.imageUrl}`}
-                      alt="Complaint"
-                      style={{
-                        width: "100px",
-                        height: "100px",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                        marginBottom: "10px",
-                      }}
-                    />
-                  )}
-                  <p>{c.description}</p>
-                  <p>
-                    Status: <strong>{c.status}</strong>
-                  </p>
-                  {c.adminResponse && <p>Admin: {c.adminResponse}</p>}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() =>
-                        handleComplaintUpdate(
-                          c._id,
-                          "In Progress",
-                          prompt("Enter update:"),
-                        )
-                      }
-                    >
-                      Update Status
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+  <h3 style={{ marginBottom: "16px", fontSize: 20, fontWeight: 700, color: "#1a2c6b" }}>
+    Complaint Management
+  </h3>
+
+  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+    <thead>
+      <tr style={{ background: "#f1f5f9" }}>
+        {["Sl No", "Title", "Description", "Status", "Action"].map((h) => (
+          <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontWeight: 700, color: "#475569", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "2px solid #e2e8f0" }}>
+            {h}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {complaints.map((c, index) => (
+        <tr key={c._id} style={{ borderBottom: "1px solid #e2e8f0", background: index % 2 === 0 ? "#fff" : "#f8fafc" }}>
+
+          <td style={{ padding: "12px 14px", color: "#94a3b8", fontWeight: 600 }}>
+            {index + 1}
+          </td>
+
+          {/* <td style={{ padding: "12px 14px" }}>
+            {c.imageUrl && (
+              <img
+                src={`${SERVER_URL}${c.imageUrl}`}
+                alt="Complaint"
+                style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }}
+              />
+            )}
+          </td> */}
+
+          <td style={{ padding: "12px 14px", fontWeight: 600, color: "#1e293b" }}>
+            {c.title}
+          </td>
+
+          <td style={{ padding: "12px 14px", color: "#475569" }}>
+            {c.description}
+          </td>
+
+          <td style={{ padding: "12px 14px", color: "#1e293b" }}>
+            {c.status}
+          </td>
+
+          {/* <td style={{ padding: "12px 14px", color: "#475569" }}>
+            {c.adminResponse}
+          </td> */}
+
+          <td style={{ padding: "12px 14px" }}>
+            <button
+              onClick={() => handleComplaintUpdate(c._id, "In Progress", prompt("Enter update:"))}
+              style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#4f7cff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              Update
+            </button>
+          </td>
+
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+        
           )}
 
           {activeTab === "profile" && (
