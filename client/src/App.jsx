@@ -23,6 +23,7 @@ import DetailedView from "./components/DetailedView";
 import AboutUs from "./pages/AboutUs";
 import Gallery from "./pages/Gallery";
 import Faq from "./pages/Faq";
+import AllEvents from "./pages/AllEvents";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -139,6 +140,19 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
+
+                <Route
+                path="/user/events"
+                element={
+                  <ProtectedRoute role="public">
+                    <AllEvents/>
+                  </ProtectedRoute>
+                }
+              /> 
+
+
+
+
 
               <Route
                 path="/complaints"

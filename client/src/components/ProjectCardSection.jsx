@@ -25,8 +25,10 @@ const ProjectCardSection = ({ data }) => {
   const displayedProjects = sortedProjects.slice(0, 2);
   const hasMoreProjects = sortedProjects.length > 2;
 
+
   // Handlers
   const handleViewDetails = (project) => {
+    console.log("triggered",projects);
     setSelectedProject(project);
     setViewMode("detailed");
   };
@@ -54,7 +56,7 @@ const ProjectCardSection = ({ data }) => {
         gap: "10px",
         transition: "all 0.2s",
         cursor: showViewButton ? "default" : "pointer",
-        height: "520px", // Fixed height
+        height: "460px", // Fixed height
         overflow: "hidden", // Hide overflow content
       }}
       onClick={() => !showViewButton && handleViewDetails(project)}
@@ -119,7 +121,7 @@ const ProjectCardSection = ({ data }) => {
       </div>
 
       {/* Status */}
-      <span
+      {/* <span
         style={{
           alignSelf: "flex-start",
           padding: "4px 10px",
@@ -141,10 +143,10 @@ const ProjectCardSection = ({ data }) => {
         }}
       >
         {project.status}
-      </span>
+      </span> */}
 
       {/* Dates */}
-      <div
+      {/* <div
         style={{
           fontSize: "0.8rem",
           color: "#6B7280",
@@ -161,7 +163,7 @@ const ProjectCardSection = ({ data }) => {
             : "-"}
         </span>
         <span>Created: {new Date(project.createdAt).toLocaleDateString()}</span>
-      </div>
+      </div> */}
 
       {/* View Details Button */}
       {showViewButton && (
@@ -450,7 +452,7 @@ const ProjectCardSection = ({ data }) => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+            gridTemplateColumns: "repeat(4, 1fr)",
             gap: "16px",
           }}
         >

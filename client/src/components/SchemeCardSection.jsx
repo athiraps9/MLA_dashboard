@@ -109,14 +109,14 @@ const SchemeCardSection = ({ data }) => {
           </span>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Clock size={16} color="#8B5CF6" />
           <span style={{ fontSize: '14px', color: '#374151' }}>
             {scheme.time}
           </span>
-        </div>
+        </div> */}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <MapPin size={16} color="#EF4444" />
           <span style={{ 
             fontSize: '14px', 
@@ -128,11 +128,11 @@ const SchemeCardSection = ({ data }) => {
           }}>
             {scheme.venue}
           </span>
-        </div>
+        </div> */}
       </div>
 
       {/* Schedule Type Badge */}
-      <span
+      {/* <span
         style={{
           alignSelf: 'flex-start',
           padding: '4px 10px',
@@ -145,7 +145,7 @@ const SchemeCardSection = ({ data }) => {
         }}
       >
         {scheme.scheduleType}
-      </span>
+      </span> */}
 
       {/* Description */}
       {scheme.description && (

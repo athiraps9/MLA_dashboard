@@ -393,12 +393,16 @@ const handleBackToGrid = () => {
           </a>
           {/* <KPICard title="Total Schemes" value={`₹${(utilizedFunds / 100000).toFixed(1)}`} subtext={`${utilizationPercentage}% Utilization`} icon={FaRupeeSign} color="#28a745" /> */}
 
+          <a href="/user/events">
           <KPICard
             title="Events"
             value={Object.keys(mlaFunds).length}
             icon={FaUsers}
             color="#fd7e14"
           />
+          </a>
+
+
           <KPICard
             title="Avg. Sabha Attendance"
             value={`${attendancePercentage}%`}

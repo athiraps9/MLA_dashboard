@@ -116,7 +116,7 @@ const EventCardSection = ({ data }) => {
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <MapPin size={16} color="#EF4444" />
           <span style={{ 
             fontSize: '14px', 
@@ -128,11 +128,11 @@ const EventCardSection = ({ data }) => {
           }}>
             {event.venue}
           </span>
-        </div>
+        </div> */}
       </div>
 
       {/* Schedule Type Badge */}
-      <span
+      {/* <span
         style={{
           alignSelf: 'flex-start',
           padding: '4px 10px',
@@ -145,10 +145,10 @@ const EventCardSection = ({ data }) => {
         }}
       >
         {event.scheduleType}
-      </span>
+      </span> */}
 
       {/* Description */}
-      {event.description && (
+      {/* {event.description && (
         <p style={{
           margin: 0,
           color: '#6B7280',
@@ -162,7 +162,7 @@ const EventCardSection = ({ data }) => {
         }}>
           {event.description}
         </p>
-      )}
+      )} */}
 
       {/* View Details Button */}
       {showViewButton && (
