@@ -203,13 +203,14 @@ router.get('/complaints', async (req, res) => {
 
 router.post('/complaints/:id', async (req, res) => {
   const user = req.params.id;
-  const { title, description } = req.body;
+  const { title, description,complaintImage } = req.body;
 
   try {
     const newComplaint = new Complaint({
       user,
       title,
       description,
+      ImageUrl:complaintImage,
     });
 
     await newComplaint.save();

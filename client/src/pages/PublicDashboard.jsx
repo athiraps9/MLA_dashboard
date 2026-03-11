@@ -398,6 +398,7 @@ const handleBackToGrid = () => {
             title="Events"
             value={Object.keys(mlaFunds).length}
             icon={FaUsers}
+             subtext={`​​`}
             color="#fd7e14"
           />
           </a>

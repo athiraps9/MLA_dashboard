@@ -8,7 +8,8 @@ import { Send } from 'lucide-react';
 const ComplaintForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
     title: '',
-    description: ''
+    description: '',
+    complaintImage: null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -42,7 +43,7 @@ const ComplaintForm = ({ onSubmit }) => {
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
-    
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -59,11 +60,13 @@ const ComplaintForm = ({ onSubmit }) => {
     try {
       await onSubmit({
         title: formData.title.trim(),
-        description: formData.description.trim()
+        description: formData.description.trim(),
+        complaintImage:formData.complaintImage,
+        
       });
       
       // Reset form on success
-      setFormData({ title: '', description: '' });
+      setFormData({ title: '', description: '',complaintImage:''});
       setSuccessMessage('✅ Complaint submitted successfully!');
       
       // Clear success message after 5 seconds
@@ -224,6 +227,35 @@ const ComplaintForm = ({ onSubmit }) => {
               {errors.description}
             </p>
           )}
+        <div>
+                        <label>Upload image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setFormData({
+                                ...formData,
+                                complaintImage: file, // Store the actual File object
+                              });
+                              console.log("File selected:", file.name);
+                            }
+                          }}
+                        />
+                      </div>
+
+
+
+
+
+
+
+
+
+
+
+
         </div>
 
         {/* Submit Error */}
