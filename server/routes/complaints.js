@@ -8,14 +8,45 @@ const upload = require('../middleware/upload');
 router.post('/', auth(['public']), upload.single('image'), async (req, res) => {
   try {
     const { title, description } = req.body;
+
     const complaint = new Complaint({
       user: req.user.id,
       title,
       description,
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : ''
+      imageUrl: ''
     });
+
+    if (req.file) {
+      try {
+        console.log("Uploading to Cloudinary...");
+
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          complaint._id.toString(),
+          req.file.mimetype,
+          'complaints'
+        );
+
+        complaint.imageUrl = result.secure_url;
+
+        console.log("Image uploaded:", result.secure_url);
+
+      } catch (uploadError) {
+        console.error('Image upload error:', uploadError);
+
+        await complaint.save();
+
+        return res.status(201).json({
+          complaint,
+          warning: 'Complaint created but image upload failed',
+          error: uploadError.message
+        });
+      }
+    }
+
     await complaint.save();
     res.status(201).json(complaint);
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

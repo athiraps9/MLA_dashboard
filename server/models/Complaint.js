@@ -9,7 +9,10 @@ const ComplaintSchema = new mongoose.Schema({
   adminResponse: { type: String },
   paResponse: { type: String },
   priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
-  imageUrl: { type: String }
+  imageUrl: { type: String },
+  imagePublicId: {
+        type: String
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Complaint', ComplaintSchema);

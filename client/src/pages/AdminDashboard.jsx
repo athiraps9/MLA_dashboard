@@ -79,7 +79,7 @@ const [scheduleForm, setScheduleForm] = useState({
       const schemesRes = await api.get("/admin/schemes/pending");
       console.log(res.data, "im waiting ");
       const eventsRes = await api.get("/admin/events/pending");
-      const pendingComplaints = await api.get("/complaints/all");
+      const pendingComplaints = await api.get("/data/complaints");
       setPending({
         projects: projectsRes.data,
         attendance: res.data.attendance,
@@ -826,7 +826,7 @@ const [scheduleForm, setScheduleForm] = useState({
                       </p>
                       {c.imageUrl && (
                         <img
-                          src={`${SERVER_URL}${c.imageUrl}`}
+                          src={`${c.imageUrl}`}
                           alt="Complaint"
                           style={{
                             width: "100px",

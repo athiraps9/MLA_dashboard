@@ -2348,7 +2348,7 @@ const handleDeleteEvent = async (id) => {
 
               <div>
                 <h3>Submitted Schemes</h3>
-                <div style={{ display: "grid", gap: "1rem" }}>
+                <div style={{ display: "flex", gap: "1rem",width:"150px" }}>
                   {schemes.map((s) => (
                     <Card key={s._id} title={s.category}>
                       {s.imageUrl && (
@@ -2356,7 +2356,7 @@ const handleDeleteEvent = async (id) => {
                           src={s.imageUrl}
                           alt={s.category}
                           style={{
-                            width: "100%",
+                            width: "300px",
                             height: "150px",
                             objectFit: "cover",
                             borderRadius: "8px",
@@ -2436,7 +2436,7 @@ const handleDeleteEvent = async (id) => {
           )}
 
           {activeTab === "events" && (
-            <div style={{ display: "grid", gap: "2rem" }}>
+            <div style={{ display: "grid", gap: "2rem",width:"600px" }}>
               <Card title="Submit New Event">
                 <form
                   onSubmit={handleEventSubmit}
@@ -2524,9 +2524,9 @@ const handleDeleteEvent = async (id) => {
                 </form>
               </Card>
 
-              <div>
+              <div >
                 <h3>Submitted Events</h3>
-                <div style={{ display: "grid", gap: "1rem" }}>
+                <div style={{ display: "flex", gap: "1rem",width: "50px", }}>
                   {events.map((ev) => (
                     <Card key={ev._id} title={ev.category}>
                       {ev.imageUrl && (
@@ -2534,7 +2534,7 @@ const handleDeleteEvent = async (id) => {
                           src={ev.imageUrl}
                           alt={ev.category}
                           style={{
-                            width: "100%",
+                            width: "420px",
                             height: "150px",
                             objectFit: "cover",
                             borderRadius: "8px",

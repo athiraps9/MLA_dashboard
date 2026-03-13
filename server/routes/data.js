@@ -9,6 +9,11 @@ const Schedule = require('../models/Schedule');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Complaint =require('../models/Complaint');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
+const { uploadToCloudinary } = require('../utils/cloudinaryHelper');
+
+
 
 
 // --- PUBLIC ROUTES ---
@@ -198,24 +203,46 @@ router.get('/complaints', async (req, res) => {
 
 
 
-
-
-
-router.post('/complaints/:id', async (req, res) => {
+router.post('/complaints/:id', upload.single('image'), async (req, res) => {
   const user = req.params.id;
-  const { title, description,complaintImage } = req.body;
+  const { title, description } = req.body;
 
   try {
     const newComplaint = new Complaint({
       user,
       title,
       description,
-      ImageUrl:complaintImage,
+      imageUrl: ''
     });
 
-    await newComplaint.save();
+    if (req.file) {
+      try {
+        console.log("Uploading to Cloudinary...");
 
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          newComplaint._id.toString(),
+          req.file.mimetype,
+          'complaints'
+        );
+
+        newComplaint.imageUrl = result.secure_url;
+        console.log("Image uploaded:", result.secure_url);
+
+      } catch (uploadError) {
+        console.error('Image upload error:', uploadError);
+        await newComplaint.save();
+        return res.status(201).json({
+          complaint: newComplaint,
+          warning: 'Complaint created but image upload failed',
+          error: uploadError.message
+        });
+      }
+    }
+
+    await newComplaint.save();
     res.status(201).json(newComplaint);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

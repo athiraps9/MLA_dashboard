@@ -29,9 +29,9 @@ import { useLanguage } from "../context/LanguageContext";
 import DetailedView from "../components/DetailedView";
 
 import ScheduleCardSection from "../components/ScheduleCardSection";
-import ComplaintForm from "../components/Complaintform";
 import ProjectCardSection from "../components/ProjectCardSection";
 import SchemeCardSection from "../components/SchemeCardSection";
+import ComplaintForm from "../components/ComplaintForm";
 
 
 
@@ -161,12 +161,21 @@ const PublicDashboard = () => {
     ],
   };
 
- const handleComplaintSubmit = async (complaintData)=>{
-  const id=user._id;
 
-  console.log(complaintData,"here complains submit");
-  await api.post(`/data/complaints/${id}`, complaintData);
-         } 
+
+
+  //complaints 
+
+
+  const handleComplaintSubmit = async (formData) => {
+  const id = user._id;
+  await api.post(`/data/complaints/${id}`, formData);
+};
+
+
+
+
+
 const handleOpenAllProjects = () => {
   setShowViewMore(true);
 };

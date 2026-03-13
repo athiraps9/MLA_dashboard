@@ -230,7 +230,7 @@ const ScheduleCard = ({
           onMouseOver={(e) => (e.target.style.opacity = "0.8")}
           onMouseOut={(e) => (e.target.style.opacity = "1")}
         >
-          <i className="fas fa-pencil-alt"></i>
+          {/* <i className="fas fa-pencil-alt"></i> */}
         </button>
 
         <button
