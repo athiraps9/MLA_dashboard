@@ -9,6 +9,7 @@ import Card from "../components/Card";
 import Button from "../components/Button";
 import { FaPlus } from "react-icons/fa";
 import api from "../utils/api";
+import AdminComplaintView from "../components/AdminComplaintView";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -788,68 +789,69 @@ const [scheduleForm, setScheduleForm] = useState({
           {/* {activeTab === 'cms' && <div><AdminLandingCMS /></div>} */}
 
           {activeTab === "complaints" && (
-            <div>
-              <div style={{ display: "grid", gap: "1rem", marginTop: "20px" }}>
-                {pending.complaints?.length === 0 ? (
-                  <p>No complaints found.</p>
-                ) : (
-                  pending.complaints?.map((c) => (
-                    <div
-                      key={c._id}
-                      style={{
-                        backgroundColor: "#FFFFFF",
-                        borderRadius: "16px",
-                        padding: "1.5rem",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <h4 style={{ margin: 0 }}>{c.title}</h4>
-                        <span
-                          style={{
-                            padding: "2px 8px",
-                            borderRadius: "10px",
-                            fontSize: "0.8rem",
-                            background:
-                              c.status === "Resolved" ? "#d4edda" : "#fff3cd",
-                            color:
-                              c.status === "Resolved" ? "#155724" : "#856404",
-                          }}
-                        >
-                          {c.status}
-                        </span>
-                      </div>
-                      <p style={{ fontSize: "0.9rem", color: "#666" }}>
-                        By: {c.user?.fullName} ({c.user?.email})
-                      </p>
-                      {c.imageUrl && (
-                        <img
-                          src={`${c.imageUrl}`}
-                          alt="Complaint"
-                          style={{
-                            width: "100px",
-                            height: "100px",
-                            objectFit: "cover",
-                            borderRadius: "8px",
-                            marginTop: "10px",
-                          }}
-                        />
-                      )}
-                      <p>{c.description}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+            // <div>
+            //   <div style={{ display: "grid", gap: "1rem", marginTop: "20px" }}>
+            //     {pending.complaints?.length === 0 ? (
+            //       <p>No complaints found.</p>
+            //     ) : (
+            //       pending.complaints?.map((c) => (
+            //         <div
+            //           key={c._id}
+            //           style={{
+            //             backgroundColor: "#FFFFFF",
+            //             borderRadius: "16px",
+            //             padding: "1.5rem",
+            //             display: "flex",
+            //             flexDirection: "column",
+            //             gap: "10px",
+            //             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            //           }}
+            //         >
+            //           <div
+            //             style={{
+            //               display: "flex",
+            //               justifyContent: "space-between",
+            //             }}
+            //           >
+            //             <h4 style={{ margin: 0 }}>{c.title}</h4>
+            //             <span
+            //               style={{
+            //                 padding: "2px 8px",
+            //                 borderRadius: "10px",
+            //                 fontSize: "0.8rem",
+            //                 background:
+            //                   c.status === "Resolved" ? "#d4edda" : "#fff3cd",
+            //                 color:
+            //                   c.status === "Resolved" ? "#155724" : "#856404",
+            //               }}
+            //             >
+            //               {c.status}
+            //             </span>
+            //           </div>
+            //           <p style={{ fontSize: "0.9rem", color: "#666" }}>
+            //             By: {c.user?.fullName} ({c.user?.email})
+            //           </p>
+            //           {c.imageUrl && (
+            //             <img
+            //               src={`${c.imageUrl}`}
+            //               alt="Complaint"
+            //               style={{
+            //                 width: "100px",
+            //                 height: "100px",
+            //                 objectFit: "cover",
+            //                 borderRadius: "8px",
+            //                 marginTop: "10px",
+            //               }}
+            //             />
+            //           )}
+            //           <p>{c.description}</p>
+            //         </div>
+            //       ))
+            //     )}
+            //   </div>
+            // </div>
+            <AdminComplaintView/>
+           )}
 
           {activeTab === "verification" && (
             <>
