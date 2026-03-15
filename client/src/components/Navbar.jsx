@@ -29,6 +29,17 @@ const Navbar = ({ user, onLogout }) => {
     return "/profile";
   };
 
+  const getCompliantLink = () => {
+    if (!user) return "/login";
+    if (user.role === "admin" || user.role === "mla") return "/admin/complaints";
+    if (user.role === "pa") return "/pa/complaints";
+    // Pass activeSection as URL parameter for regular users
+    return "/complaints";
+  };
+
+
+
+
   return (
     <nav
       className="navbar"
@@ -211,6 +222,21 @@ const Navbar = ({ user, onLogout }) => {
                   >
                     Dashboard
                   </Link>
+                  {user.role =="public" && (
+                     <Link to={getCompliantLink()} className="dropdown-item"
+
+               style={{
+                        display: "block",
+                        padding: "12px 20px",
+                        color: "#333",
+                        textDecoration: "none",
+                        borderBottom: "1px solid #f8f9fa",
+                      }}>
+
+                    My Compliants
+                  </Link>
+                    
+                  )}
                   {user.role !== "pa" && (
                     <Link
                       to={getProfileLink()}
@@ -227,6 +253,8 @@ const Navbar = ({ user, onLogout }) => {
                       My Profile
                     </Link>
                   )}
+                
+              
 
                   <button
                     onClick={handleLogout}
