@@ -306,6 +306,7 @@ const [scheduleForm, setScheduleForm] = useState({
   };
 
   const handleVerifyAttendance = async (id) => {
+    console.log(" try verify",id);
     try {
       await api.put(`/admin/attendance/${id}/verify`, {
         isVerified: true,
@@ -324,16 +325,21 @@ const [scheduleForm, setScheduleForm] = useState({
     try {
       const remarks = prompt(
         "Enter rejection reason (optional):",
-        "Invalid record",
+        "please enter rejection reason",
       );
       if (remarks === null) return;
       await api.put(`/admin/attendance/${id}/verify`, {
-        isVerified: false,
+        isVerified: true,
+        isRejected:true,
         remarks: remarks || "Rejected",
-      });
-      fetchAllAttendance();
-      fetchPending();
-      alert("Attendance rejected.");
+      }).then(()=>{
+        console.log("*********triggered");
+         fetchAllAttendance();
+         fetchPending();
+        // alert("Attendance rejected.");
+
+      })
+     
     } catch (err) {
       console.error(err);
       alert("Action failed");
@@ -1261,7 +1267,8 @@ const [scheduleForm, setScheduleForm] = useState({
                               {a.present ? "Present" : "Absent"}
                             </td>
                             <td style={{ padding: "16px" }}>
-                              <button
+                              <button  onClick={()=> 
+                                handleVerifyAttendance(a._id)} 
                                 style={{
                                   marginRight: "8px",
                                   padding: "6px 12px",
@@ -1274,7 +1281,7 @@ const [scheduleForm, setScheduleForm] = useState({
                               >
                                 Verify
                               </button>
-                              <button
+                              <button onClick={()=>handleRejectAttendance (a._id)}
                                 style={{
                                   padding: "6px 12px",
                                   backgroundColor: "#EF4444",

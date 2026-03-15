@@ -413,6 +413,9 @@ const handleBackToGrid = () => {
           </a>
 
 
+
+          <a href="/user/attendance">
+
           <KPICard
             title="Avg. Sabha Attendance"
             value={`${attendancePercentage}%`}
@@ -420,6 +423,7 @@ const handleBackToGrid = () => {
             icon={FaClipboardList}
             color="#6f42c1"
           />
+          </a>
         </div>
 
         {/* Quick Links */}

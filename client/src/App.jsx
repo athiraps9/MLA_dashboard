@@ -24,6 +24,7 @@ import AboutUs from "./pages/AboutUs";
 import Gallery from "./pages/Gallery";
 import Faq from "./pages/Faq";
 import AllEvents from "./pages/AllEvents";
+import AllAttendance from "./pages/AllAttendance";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -150,6 +151,14 @@ const App = () => {
                 }
               /> 
 
+               <Route
+                path="/user/attendance"
+                element={
+                  <ProtectedRoute role="public">
+                    <AllAttendance/>
+                  </ProtectedRoute>
+                }
+              /> 
 
 
 
