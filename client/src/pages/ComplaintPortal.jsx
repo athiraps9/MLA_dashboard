@@ -27,6 +27,9 @@ const ComplaintPortal = () => {
     // --- View More state ---
     const [selectedComplaint, setSelectedComplaint] = useState(null);
 
+    //search button
+    const [searchTerm, setSearchTerm] = useState("");
+
     const { t } = useLanguage();
 
     useEffect(() => {
@@ -83,6 +86,18 @@ const ComplaintPortal = () => {
             default:           return <FaExclamationCircle />;
         }
     };
+
+    //search 
+
+    const filteredComplaints = complaints.filter((c) =>
+    (c.title + " " + c.description + " " + c.status)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+);
+
+
+
+
 
     /* ---------- TABLE STYLES ---------- */
     const thStyle = {
@@ -311,6 +326,27 @@ const ComplaintPortal = () => {
                             {c.description}
                         </p>
                     </div>
+                 <div style={{ ...detailCardStyle, marginBottom: "16px" }}>
+    <h4 style={{ ...detailCardTitle, marginBottom: "12px" }}>
+        Complaint Image
+    </h4>
+
+    {c.imageUrl ? (
+        <img
+            src={c.imageUrl}
+            alt="Complaint"
+            style={{
+                width: "100%",
+                maxHeight: "400px",
+                objectFit: "contain",
+                borderRadius: "8px",
+                border: "1px solid #E5E7EB",
+            }}
+        />
+    ) : (
+        <p style={{ color: "#6B7280" }}>No image uploaded</p>
+    )}
+</div>
 
                     {/* ---- ADMIN RESPONSE CARD (only if present) ---- */}
                     {c.adminResponse && (
@@ -337,6 +373,7 @@ const ComplaintPortal = () => {
                             </p>
                         </div>
                     )}
+                    
                 </div>
             </div>
         );
@@ -350,13 +387,38 @@ const ComplaintPortal = () => {
             <h2 style={{ marginBottom: '20px' }}>
                 {t('My Complaints')}
             </h2>
+            <div>
+                        <div
+                style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginBottom: "5px",
+                }}
+            >
+                <input
+                    type="text"
+                    placeholder="Search complaints..."
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                        padding: "8px 14px",
+                        borderRadius: "8px",
+                        border: "1px solid #E5E7EB",
+                        width: "500px",
+                        fontSize: "14px",
+                        outline: "none",
+                    }}
+                />
+            </div>
+
+            </div>
 
             <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                 <div style={{ padding: '30px' }}>
 
                     {loading ? (
                         <p>Loading history...</p>
-                    ) : complaints.length > 0 ? (
+                    ) : filteredComplaints.length > 0 ? (
 
                         <div style={{ overflowX: "auto" }}>
                             <table
@@ -377,7 +439,7 @@ const ComplaintPortal = () => {
                                 </thead>
 
                                 <tbody>
-                                    {complaints.map((c) => (
+                                    {filteredComplaints.map((c) => (
                                         <tr key={c._id}>
 
                                             <td style={{ ...tdStyle, width: "20%" }}>

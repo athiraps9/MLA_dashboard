@@ -50,6 +50,8 @@ const AdminComplaintView = ({ pending }) => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [statusValue, setStatusValue] = useState(selected?.status);
 const [adminResponse, setAdminResponse] = useState(selected?.adminResponse || '');
+const [searchTerm, setSearchTerm] = useState("");
+
 
 
   useEffect(() => {
@@ -68,6 +70,13 @@ const [adminResponse, setAdminResponse] = useState(selected?.adminResponse || ''
 
     fetchComplaints();
   }, []);
+
+
+  const filteredComplaints = complaints.filter((c) =>
+    (c.title + " " + c.description + " " + c.status)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+);
 
  const handleUpdate = async () => {
   try {
@@ -326,10 +335,44 @@ const [adminResponse, setAdminResponse] = useState(selected?.adminResponse || ''
 
   return (
     <div style={{ marginTop: "20px" }}>
-      {complaints.length === 0 ? (
+        <div
+        style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: "10px",
+        }}
+    >
+        <input
+            type="text"
+            placeholder="Search complaints..."
+             value={searchTerm}
+             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "1px solid #E5E7EB",
+                width: "600px",
+                fontSize: "14px",
+                outline: "none",
+            }}
+        />
+    </div>
+      {filteredComplaints.length === 0 ? (
         <p style={{ color: "#999" }}>No complaints found.</p>
       ) : (
         <div style={{ overflowX: "auto", borderRadius: "12px", border: "1px solid #E5E7EB" }}>
+          
+         
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff" }}>
             <thead>
               <tr>
@@ -343,7 +386,7 @@ const [adminResponse, setAdminResponse] = useState(selected?.adminResponse || ''
               </tr>
             </thead>
             <tbody>
-              {complaints.map((c, index) => (
+              {filteredComplaints.map((c, index) => (
                 <tr
                   key={c._id}
                   style={{ transition: "background 0.15s" }}

@@ -38,6 +38,9 @@ const PADashboard = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState("");
 
+  //search bar
+  const [searchTerm, setSearchTerm] = useState("");
+
   // Attendance State
   const [seasons, setSeasons] = useState([]);
   const [attendanceForm, setAttendanceForm] = useState({
@@ -883,6 +886,24 @@ const handleDeleteEvent = async (id) => {
     };
     return titles[activeTab] || "Dashboard";
   };
+
+  const filteredComplaints = complaints.filter((c) =>
+    (c.title + " " + c.description + " " + c.status)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+);
+
+
+
+
+
+
+
+
+
+
+
+
 
   //Handle Delete and Edit Functions for Attendance
 
@@ -2615,6 +2636,32 @@ const handleDeleteEvent = async (id) => {
     Complaint Management
   </h3>
 
+   <div
+        style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: "10px",
+        }}
+    >
+        <input
+            type="text"
+            placeholder="Search complaints..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "1px solid #E5E7EB",
+                width: "600px",
+                fontSize: "14px",
+                outline: "none",
+            }}
+        />
+    </div>
+
+
+
+
   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
     <thead>
       <tr style={{ background: "#f1f5f9" }}>
@@ -2626,7 +2673,7 @@ const handleDeleteEvent = async (id) => {
       </tr>
     </thead>
     <tbody>
-      {complaints.map((c, index) => (
+      {filteredComplaints.map((c, index) => (
         <tr key={c._id} style={{ borderBottom: "1px solid #e2e8f0", background: index % 2 === 0 ? "#fff" : "#f8fafc" }}>
 
           <td style={{ padding: "12px 14px", color: "#94a3b8", fontWeight: 600 }}>
@@ -2648,7 +2695,18 @@ const handleDeleteEvent = async (id) => {
           </td>
 
           <td style={{ padding: "12px 14px", color: "#475569" }}>
-            {c.description}
+              <span
+    style={{
+      display: "-webkit-box",
+      WebkitLineClamp: 2,          //limit 2
+      WebkitBoxOrient: "vertical",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      lineHeight: "1.5",
+      maxWidth: "300px",           
+    }}
+  >  {c.description}</span>
+           
           </td>
 
           <td style={{ padding: "12px 14px", color: "#1e293b" }}>
